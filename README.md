@@ -5,6 +5,8 @@
 **Selected Challenge:** Problem 7: Real-Time Clinical Measurement  
 **Team Name:** ctrlX  
 **Team Members:** S Sidharth Unni & Arjun Unnikrishnan Pillai (Amrita Vishwa Vidyapeetham)  
+**Live Interactive WebGL Demo:** https://sidharthunni.github.io/sonodent/  
+**Source Code Repository:** https://github.com/sidharthunni/sonodent  
 
 ---
 
