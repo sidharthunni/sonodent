@@ -295,6 +295,36 @@
           }
         }
 
+        // Implicit tooth selection (e.g. "14 5 4 6", "14 546", "19 6 5 6")
+        // Rule 1: A number between 10 and 32 followed immediately by a pocket depth (1..9)
+        const possibleTooth = parseInt(tok, 10);
+        if (!isNaN(possibleTooth) && possibleTooth >= 10 && possibleTooth <= 32 && i + 1 < tokens.length) {
+          const nextVal = this.parseSpokenNumber(tokens[i + 1]);
+          if (nextVal !== null && nextVal >= 1 && nextVal <= 9) {
+            this.selectTooth(possibleTooth);
+            actions.push({ type: "select_tooth", toothId: this.activeToothId });
+            lastMeasuredSite = null;
+            i++;
+            continue;
+          }
+        }
+
+        // Rule 2: Single digit tooth 1..9 at start of utterance followed by 3 single-digit depths
+        // e.g. "3 4 3 5" -> Tooth #3 with depths 4, 3, 5
+        if (i === 0 && tokens.length >= 4 && /^[1-9]$/.test(tok)) {
+          const d1 = this.parseSpokenNumber(tokens[1]);
+          const d2 = this.parseSpokenNumber(tokens[2]);
+          const d3 = this.parseSpokenNumber(tokens[3]);
+          if (d1 !== null && d1 >= 1 && d1 <= 9 && d2 !== null && d2 >= 1 && d2 <= 9 && d3 !== null && d3 >= 1 && d3 <= 9) {
+            const tNum = parseInt(tok, 10);
+            this.selectTooth(tNum);
+            actions.push({ type: "select_tooth", toothId: this.activeToothId });
+            lastMeasuredSite = null;
+            i++;
+            continue;
+          }
+        }
+
         const siteMatch = this.matchSiteName(tok);
         if (siteMatch) {
           this.activeSiteIndex = SITES.indexOf(siteMatch);
