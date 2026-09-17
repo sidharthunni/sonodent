@@ -1482,6 +1482,10 @@
                 const toothSelect = actions.find(a => a.type === 'select_tooth');
 
                 if (rollback) {
+                  const undone = rollback.item;
+                  const tId = undone ? (undone.initialTooth || (undone.entries && undone.entries[0] && undone.entries[0].toothId) || "") : "";
+                  const count = undone && undone.entries ? undone.entries.length : 1;
+                  document.getElementById('transcription-tape').textContent = `ROLLBACK: Restored ${count} measurement(s) on Tooth #${tId}`;
                   speakConfirmation("Entry undone");
                 } else if (measurements.length > 0) {
                   const toothId = measurements[0].toothId;
@@ -1590,7 +1594,9 @@
       document.getElementById('btn-voice-rollback').addEventListener('click', () => {
         const undone = engine.rollbackLast();
         if (undone) {
-          document.getElementById('transcription-tape').textContent = `ROLLBACK: Restored Tooth #${undone.toothId} ${undone.site} to ${undone.prevProbing}mm`;
+          const tId = undone.initialTooth || (undone.entries && undone.entries[0] && undone.entries[0].toothId) || "";
+          const count = undone.entries ? undone.entries.length : 1;
+          document.getElementById('transcription-tape').textContent = `ROLLBACK: Restored ${count} measurement(s) on Tooth #${tId}`;
           speakConfirmation("Undone");
           updateActiveToothHUD();
           update2DChart();

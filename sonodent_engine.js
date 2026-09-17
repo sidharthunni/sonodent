@@ -64,6 +64,7 @@
       this.activeToothId = 1;
       this.activeSiteIndex = 0; // 0 to 5
       this.historyStack = [];
+      this.currentBatch = null;
       this.numberingSystem = "universal"; // "universal" or "fdi"
       this.initChart();
     }
@@ -102,18 +103,43 @@
       });
     }
 
+    beginBatch() {
+      this.currentBatch = {
+        initialTooth: this.activeToothId,
+        initialSite: this.activeSiteIndex,
+        entries: []
+      };
+    }
+
+    commitBatch() {
+      if (this.currentBatch && this.currentBatch.entries.length > 0) {
+        this.historyStack.push(this.currentBatch);
+      }
+      this.currentBatch = null;
+    }
+
     setMeasurement(toothId, site, depth, bleeding = null, suppuration = null, recession = null) {
       if (!this.teeth[toothId]) return false;
       const t = this.teeth[toothId];
       
-      this.historyStack.push({
+      const entry = {
         toothId,
         site,
         prevProbing: t.probing[site],
         prevBleeding: t.bleeding[site],
         prevSuppuration: t.suppuration[site],
         prevRecession: t.recession[site]
-      });
+      };
+
+      if (this.currentBatch) {
+        this.currentBatch.entries.push(entry);
+      } else {
+        this.historyStack.push({
+          initialTooth: this.activeToothId,
+          initialSite: this.activeSiteIndex,
+          entries: [entry]
+        });
+      }
 
       if (depth !== null && depth !== undefined) {
         t.probing[site] = Math.max(1, Math.min(15, parseInt(depth, 10)));
@@ -127,15 +153,30 @@
 
     rollbackLast() {
       if (this.historyStack.length === 0) return null;
-      const item = this.historyStack.pop();
-      const t = this.teeth[item.toothId];
-      t.probing[item.site] = item.prevProbing;
-      t.bleeding[item.site] = item.prevBleeding;
-      t.suppuration[item.site] = item.prevSuppuration;
-      t.recession[item.site] = item.prevRecession;
-      this.activeToothId = item.toothId;
-      this.activeSiteIndex = SITES.indexOf(item.site);
-      return item;
+      const batch = this.historyStack.pop();
+      if (!batch) return null;
+
+      const entries = batch.entries || (batch.toothId ? [batch] : []);
+      for (let i = entries.length - 1; i >= 0; i--) {
+        const entry = entries[i];
+        const t = this.teeth[entry.toothId];
+        if (t) {
+          t.probing[entry.site] = entry.prevProbing;
+          t.bleeding[entry.site] = entry.prevBleeding;
+          t.suppuration[entry.site] = entry.prevSuppuration;
+          t.recession[entry.site] = entry.prevRecession;
+        }
+      }
+
+      if (batch.initialTooth !== undefined) {
+        this.activeToothId = batch.initialTooth;
+        this.activeSiteIndex = batch.initialSite !== undefined ? batch.initialSite : 0;
+      } else if (entries.length > 0) {
+        this.activeToothId = entries[0].toothId;
+        this.activeSiteIndex = SITES.indexOf(entries[0].site);
+      }
+
+      return batch;
     }
 
     advanceSite() {
@@ -169,6 +210,11 @@
     parseVoiceTranscript(text) {
       if (!text || typeof text !== "string") return [];
       let clean = text.toLowerCase().trim();
+
+      // Normalize undo / rollback variations
+      clean = clean.replace(/\b(scratch\s+that|scratch\s+it|un\s+do|and\s+do|an\s+do|unto|can\s+do|cancel\s+that)\b/g, "undo");
+
+      this.beginBatch();
 
       // 1. Phonetic replacement for tooth indicator before numbers or digits
       // Handles "to 14", "too 14", "two 14", "to the 14", "teeth 14", "number 14", "tooth #14", "tooth14", "to 14546"
@@ -363,6 +409,7 @@
         i++;
       }
 
+      this.commitBatch();
       return actions;
     }
 
