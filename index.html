@@ -15,7 +15,7 @@
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
     body {
       font-family: 'Inter', sans-serif;
-      background-color: #070b14;
+      background-color: #050813;
       color: #f1f5f9;
       overflow-x: hidden;
     }
@@ -27,7 +27,7 @@
       height: 6px;
     }
     ::-webkit-scrollbar-track {
-      background: #0f172a;
+      background: #0b1120;
     }
     ::-webkit-scrollbar-thumb {
       background: #334155;
@@ -52,7 +52,7 @@
       color: #f87171;
     }
     .cell-active {
-      box-shadow: 0 0 0 2px #38bdf8, 0 0 10px rgba(56, 189, 248, 0.6);
+      box-shadow: 0 0 0 2px #38bdf8, 0 0 12px rgba(56, 189, 248, 0.7);
       z-index: 10;
     }
     .has-bleeding {
@@ -95,39 +95,39 @@
     }
   </style>
 </head>
-<body class="min-h-screen flex flex-col bg-[#070b14] text-slate-100 selection:bg-cyan-500 selection:text-white">
+<body class="min-h-screen flex flex-col bg-[#050813] text-slate-100 selection:bg-cyan-500 selection:text-white">
 
   <!-- TOP HEADER / CARESTACK ENTERPRISE DROP-IN BAR -->
-  <header class="border-b border-slate-800 bg-[#0c1222]/95 backdrop-blur sticky top-0 z-40 px-4 py-2.5 flex flex-wrap items-center justify-between gap-3">
+  <header class="border-b border-slate-800 bg-[#0a0f1d]/95 backdrop-blur sticky top-0 z-40 px-4 py-2.5 flex flex-wrap items-center justify-between gap-3 shadow-md">
     <div class="flex items-center space-x-3">
-      <div class="h-9 w-9 rounded-lg bg-gradient-to-tr from-cyan-600 via-blue-600 to-indigo-600 flex items-center justify-center font-bold text-white tracking-wider text-sm shadow-lg shadow-cyan-950/50">
+      <div class="h-9 w-9 rounded-lg bg-gradient-to-tr from-cyan-600 via-blue-600 to-indigo-600 flex items-center justify-center font-bold text-white tracking-wider text-sm shadow-lg shadow-cyan-950/60">
         SD
       </div>
       <div>
         <div class="flex items-center space-x-2">
           <span class="font-bold text-base tracking-tight text-white">SonoDent AI</span>
           <span class="text-[10px] uppercase font-semibold px-2 py-0.5 rounded bg-cyan-950 text-cyan-300 border border-cyan-700/60">
-            CareStack EHR Drop-In Module
+            CareStack Cloud EHR Module
           </span>
           <span class="text-[10px] uppercase font-semibold px-2 py-0.5 rounded bg-emerald-950 text-emerald-300 border border-emerald-700/60">
-            Problem 7 Winner
+            DSOLVE 2026 Problem 7
           </span>
         </div>
-        <p class="text-xs text-slate-400 font-mono">DSOLVE 2026 // Team ctrlX: S Sidharth Unni &amp; Arjun Unnikrishnan Pillai</p>
+        <p class="text-xs text-slate-400 font-mono">Team ctrlX: S Sidharth Unni &amp; Arjun Unnikrishnan Pillai</p>
       </div>
     </div>
 
-    <!-- Live Telemetry Status Pills & Global Action Triggers -->
+    <!-- Live Telemetry Status Pills & Actions -->
     <div class="flex items-center space-x-2 sm:space-x-3 text-xs font-mono">
-      <div class="hidden md:flex items-center px-2.5 py-1 rounded bg-slate-800/80 border border-slate-700/60 text-slate-300">
+      <div class="hidden md:flex items-center px-2.5 py-1 rounded bg-slate-900 border border-slate-800 text-slate-300">
         <span class="w-2 h-2 rounded-full bg-emerald-400 mr-2 animate-pulse"></span>
         <span>LATENCY: <strong class="text-emerald-400 font-bold" id="telemetry-latency">38ms</strong></span>
       </div>
-      <div class="hidden lg:flex items-center px-2.5 py-1 rounded bg-slate-800/80 border border-slate-700/60 text-slate-300">
-        <span class="text-slate-400 mr-1">SECURITY:</span>
+      <div class="hidden lg:flex items-center px-2.5 py-1 rounded bg-slate-900 border border-slate-800 text-slate-300">
+        <span class="text-slate-400 mr-1">PRIVACY:</span>
         <strong class="text-cyan-400">100% Client-Side / Zero Cloud Leak</strong>
       </div>
-      <div class="flex items-center px-2.5 py-1 rounded bg-slate-800/80 border border-slate-700/60 text-slate-300">
+      <div class="flex items-center px-2.5 py-1 rounded bg-slate-900 border border-slate-800 text-slate-300">
         <span class="text-slate-400 mr-1">FPS:</span>
         <span id="fps-counter" class="text-emerald-400 font-bold">60</span>
       </div>
@@ -140,18 +140,21 @@
     </div>
   </header>
 
-  <!-- MAIN DUAL-PANE WORKSPACE -->
+  <!-- MAIN WORKSPACE -->
   <main class="flex-1 grid grid-cols-1 lg:grid-cols-12 gap-0 overflow-hidden">
 
     <!-- LEFT PANE: 3D ANATOMICAL DENTAL TWIN & VOICE CONTROLS (Cols 1-7) -->
-    <section class="lg:col-span-7 flex flex-col border-b lg:border-b-0 lg:border-r border-slate-800 relative bg-[#040812]">
+    <section class="lg:col-span-7 flex flex-col border-b lg:border-b-0 lg:border-r border-slate-800 relative bg-[#030610]">
       
-      <!-- 3D Canvas Container -->
-      <div class="relative w-full h-[450px] sm:h-[520px] lg:h-full min-h-[450px] flex-1">
+      <!-- 3D Canvas Viewport -->
+      <div class="relative w-full h-[460px] sm:h-[530px] lg:h-full min-h-[460px] flex-1">
         <div id="three-canvas-container" class="absolute inset-0 w-full h-full"></div>
 
         <!-- 3D Viewport Top Floating Controls -->
         <div class="absolute top-3 left-3 z-20 flex flex-wrap gap-1.5">
+          <button id="cam-preset-front" class="px-2.5 py-1 rounded bg-slate-900/90 backdrop-blur border border-slate-700 hover:border-cyan-500 text-[11px] text-slate-200 transition font-medium">
+            Anterior Smile
+          </button>
           <button id="cam-preset-full" class="px-2.5 py-1 rounded bg-slate-900/90 backdrop-blur border border-slate-700 hover:border-cyan-500 text-[11px] text-slate-200 transition font-medium">
             Full Arcade
           </button>
@@ -161,8 +164,8 @@
           <button id="cam-preset-mandible" class="px-2.5 py-1 rounded bg-slate-900/90 backdrop-blur border border-slate-700 hover:border-cyan-500 text-[11px] text-slate-200 transition font-medium">
             Mandible (Lower)
           </button>
-          <button id="cam-preset-front" class="px-2.5 py-1 rounded bg-slate-900/90 backdrop-blur border border-slate-700 hover:border-cyan-500 text-[11px] text-slate-200 transition font-medium">
-            Anterior Smile
+          <button id="btn-toggle-bite" class="px-2.5 py-1 rounded bg-slate-900/90 backdrop-blur border border-slate-700 hover:border-cyan-500 text-[11px] text-cyan-300 transition font-medium">
+            Bite: Open View
           </button>
           <button id="view-mode-toggle" class="px-2.5 py-1 rounded bg-cyan-950/90 backdrop-blur border border-cyan-700 hover:border-cyan-400 text-[11px] text-cyan-300 font-medium transition">
             Shader: Solid Enamel
@@ -210,7 +213,7 @@
             <span id="active-tooth-type" class="uppercase text-[10px] text-slate-400 font-semibold">Molar (3 Roots)</span>
           </div>
 
-          <!-- 6 Probing Sites Direct Gauges -->
+          <!-- 6 Probing Sites Gauges -->
           <div class="grid grid-cols-6 gap-1 text-center font-mono">
             <div id="badge-site-0" class="p-1.5 rounded bg-slate-800 border border-slate-700 text-[10px]">
               <div class="text-[9px] text-slate-400 font-semibold">MB</div>
@@ -267,7 +270,7 @@
               <span id="voice-btn-text">Start Hands-Free Voice</span>
             </button>
 
-            <!-- Audio Spectrum Oscilloscope Simulator Canvas -->
+            <!-- Audio Spectrum Oscilloscope Canvas -->
             <div class="flex flex-col justify-center">
               <div class="text-[10px] font-mono text-slate-400 mb-1 flex items-center justify-between">
                 <span>OPERATORY DSP</span>
@@ -277,7 +280,7 @@
             </div>
           </div>
 
-          <!-- Noise Gate & Filter Toggle & Voice Undo -->
+          <!-- Noise Gate Toggle & Voice Undo -->
           <div class="flex items-center space-x-2">
             <button id="btn-toggle-noise-filter" class="px-2.5 py-1.5 rounded bg-slate-800 hover:bg-slate-700 border border-slate-700 text-[11px] text-slate-300 transition">
               Suction Filter: Active
@@ -296,7 +299,7 @@
           </span>
         </div>
 
-        <!-- ONE-CLICK DEMONSTRATION PRESETS FOR JUDGES -->
+        <!-- ONE-CLICK DEMO BUTTONS FOR JUDGES -->
         <div class="mt-2.5 pt-2 border-t border-slate-800/60 flex flex-wrap items-center gap-1.5 text-[11px]">
           <span class="text-slate-500 text-[10px] uppercase font-mono mr-1">Hackathon Demos:</span>
           <button id="demo-routine" class="px-2 py-1 rounded bg-slate-800/90 hover:bg-slate-700 border border-slate-700 text-slate-200 transition">
@@ -316,7 +319,7 @@
     </section>
 
     <!-- RIGHT PANE: CLINICAL TELEMETRY, 2D PERIO CHART & CDT CODING (Cols 8-12) -->
-    <section class="lg:col-span-5 flex flex-col bg-[#070b14] overflow-y-auto max-h-[85vh] lg:max-h-full">
+    <section class="lg:col-span-5 flex flex-col bg-[#050813] overflow-y-auto max-h-[85vh] lg:max-h-full">
       
       <!-- CLINICAL DIAGNOSTIC CLASSIFICATION (AAP / EFP 2018 WORLD WORKSHOP) -->
       <div class="p-4 border-b border-slate-800 bg-slate-900/40">
@@ -394,7 +397,6 @@
               <thead>
                 <tr class="text-slate-400 border-b border-slate-800 bg-slate-900/60">
                   <th class="p-1 w-10 text-left">Site</th>
-                  <!-- Teeth 1 to 16 -->
                   <th class="p-1">1</th><th class="p-1">2</th><th class="p-1">3</th><th class="p-1">4</th>
                   <th class="p-1">5</th><th class="p-1">6</th><th class="p-1">7</th><th class="p-1">8</th>
                   <th class="p-1">9</th><th class="p-1">10</th><th class="p-1">11</th><th class="p-1">12</th>
@@ -419,7 +421,6 @@
               <thead>
                 <tr class="text-slate-400 border-b border-slate-800 bg-slate-900/60">
                   <th class="p-1 w-10 text-left">Site</th>
-                  <!-- Teeth 17 to 32 -->
                   <th class="p-1">17</th><th class="p-1">18</th><th class="p-1">19</th><th class="p-1">20</th>
                   <th class="p-1">21</th><th class="p-1">22</th><th class="p-1">23</th><th class="p-1">24</th>
                   <th class="p-1">25</th><th class="p-1">26</th><th class="p-1">27</th><th class="p-1">28</th>
@@ -464,8 +465,6 @@
   <!-- OFFICIAL CDT INSURANCE CLAIM DOSSIER MODAL -->
   <div id="modal-dossier" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm hidden items-center justify-center p-4">
     <div class="bg-slate-900 border border-slate-700 rounded-xl max-w-2xl w-full max-h-[90vh] flex flex-col shadow-2xl overflow-hidden" id="print-modal">
-      
-      <!-- Modal Header -->
       <div class="px-6 py-4 border-b border-slate-800 flex items-center justify-between bg-slate-950">
         <div>
           <h3 class="font-bold text-base text-white">Periodontal Scaling &amp; Root Planing Medical Necessity Dossier</h3>
@@ -474,9 +473,7 @@
         <button id="btn-close-modal" class="text-slate-400 hover:text-white text-lg font-bold px-2 py-1">&times;</button>
       </div>
 
-      <!-- Modal Body -->
       <div class="p-6 space-y-4 overflow-y-auto flex-1 text-xs text-slate-300 font-sans leading-relaxed">
-        
         <div class="border border-slate-700 rounded-lg p-3 bg-slate-800/40">
           <div class="grid grid-cols-2 gap-3 text-slate-300 font-mono text-[11px]">
             <div><strong>Patient ID:</strong> CS-2026-88941</div>
@@ -488,9 +485,7 @@
 
         <div>
           <h4 class="font-bold text-slate-200 text-sm mb-1 uppercase tracking-wide">1. Official Periodontal Diagnostic Statement</h4>
-          <div id="dossier-diagnosis-box" class="p-3 bg-slate-950 rounded-lg border border-slate-800 text-cyan-300 font-mono text-xs">
-            <!-- Populated dynamically -->
-          </div>
+          <div id="dossier-diagnosis-box" class="p-3 bg-slate-950 rounded-lg border border-slate-800 text-cyan-300 font-mono text-xs"></div>
         </div>
 
         <div>
@@ -504,17 +499,13 @@
                 <th class="p-2 text-right">Fee</th>
               </tr>
             </thead>
-            <tbody id="dossier-cdt-table">
-              <!-- Dynamically populated -->
-            </tbody>
+            <tbody id="dossier-cdt-table"></tbody>
           </table>
         </div>
 
         <div>
           <h4 class="font-bold text-slate-200 text-sm mb-1 uppercase tracking-wide">3. Claim Adjudication Narrative (Payor Medical Necessity Text)</h4>
-          <div id="dossier-narrative-box" class="p-3 bg-slate-950 rounded-lg border border-slate-800 text-slate-300 font-mono text-[11px] whitespace-pre-wrap leading-relaxed">
-            <!-- Narrative built by engine -->
-          </div>
+          <div id="dossier-narrative-box" class="p-3 bg-slate-950 rounded-lg border border-slate-800 text-slate-300 font-mono text-[11px] whitespace-pre-wrap leading-relaxed"></div>
         </div>
 
         <div class="text-[10px] text-slate-500 border-t border-slate-800 pt-2">
@@ -522,7 +513,6 @@
         </div>
       </div>
 
-      <!-- Modal Footer -->
       <div class="px-6 py-3 border-t border-slate-800 bg-slate-950 flex items-center justify-between">
         <button onclick="window.print()" class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 font-medium text-xs transition">
           Print / Export PDF
@@ -534,7 +524,7 @@
     </div>
   </div>
 
-  <!-- CARESTACK EHR FHIR / JSON API PAYLOAD MODAL -->
+  <!-- CARESTACK EHR FHIR / JSON API MODAL -->
   <div id="modal-api" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm hidden items-center justify-center p-4">
     <div class="bg-slate-900 border border-slate-700 rounded-xl max-w-2xl w-full max-h-[85vh] flex flex-col shadow-2xl overflow-hidden">
       <div class="px-6 py-4 border-b border-slate-800 flex items-center justify-between bg-slate-950">
@@ -560,38 +550,105 @@
     (function() {
       'use strict';
 
-      // 1. Initialize SonoDent Clinical Engine
       const engine = new SonoDentEngine();
 
-      // 2. Three.js Dental Digital Twin Setup
       let scene, camera, renderer, controls;
       const toothMeshes = {};
       const toothLabelSprites = {};
-      const gumMeshes = [];
       let isXRayMode = false;
       let labelsVisible = true;
       let activeBeaconMesh = null;
+      let isBiteClosed = false;
+      let upperArchGroup = null;
+      let lowerArchGroup = null;
 
       const container = document.getElementById('three-canvas-container');
 
-      // Parabolic Human Dental Arch Curve Calculator
-      // Returns { x, z, angle } for index 0 to 15
+      // 1. Procedural Realistic Enamel & Gingiva Textures
+      function createEnamelTexture() {
+        const c = document.createElement('canvas');
+        c.width = 128;
+        c.height = 256;
+        const ctx = c.getContext('2d');
+
+        // Vertical gradient: warm root line -> pearlescent enamel body -> translucent incisal edge
+        const grad = ctx.createLinearGradient(0, 0, 0, 256);
+        grad.addColorStop(0.0, '#f2dec1'); // Cervical root warm tone
+        grad.addColorStop(0.15, '#faf6ee');
+        grad.addColorStop(0.5, '#ffffff'); // Healthy pearly body
+        grad.addColorStop(0.9, '#f4f8fb');
+        grad.addColorStop(1.0, '#dce7f0'); // Translucent biting edge
+        ctx.fillStyle = grad;
+        ctx.fillRect(0, 0, 128, 256);
+
+        // Subtle anatomical vertical enamel striations (perikymata)
+        ctx.strokeStyle = 'rgba(230, 230, 230, 0.2)';
+        ctx.lineWidth = 1;
+        for (let x = 8; x < 128; x += 10) {
+          ctx.beginPath();
+          ctx.moveTo(x, 10);
+          ctx.lineTo(x, 246);
+          ctx.stroke();
+        }
+
+        const tex = new THREE.CanvasTexture(c);
+        tex.wrapS = THREE.RepeatWrapping;
+        tex.wrapT = THREE.ClampToEdgeWrapping;
+        return tex;
+      }
+
+      function createGingivaTexture() {
+        const c = document.createElement('canvas');
+        c.width = 256;
+        c.height = 256;
+        const ctx = c.getContext('2d');
+
+        // Base mucosal pink-red gradient
+        const grad = ctx.createLinearGradient(0, 0, 0, 256);
+        grad.addColorStop(0.0, '#b83b52'); // Deep alveolar mucosa
+        grad.addColorStop(0.4, '#c95169');
+        grad.addColorStop(0.8, '#d6657c'); // Attached gingiva
+        grad.addColorStop(1.0, '#e58094'); // Marginal free gingival crest
+        ctx.fillStyle = grad;
+        ctx.fillRect(0, 0, 256, 256);
+
+        // Natural gingival stippling (micro orange-peel texture)
+        for (let i = 0; i < 600; i++) {
+          const rx = Math.random() * 256;
+          const ry = Math.random() * 256;
+          const rad = Math.random() * 1.5 + 0.5;
+          ctx.fillStyle = Math.random() > 0.5 ? 'rgba(255, 255, 255, 0.15)' : 'rgba(120, 20, 40, 0.15)';
+          ctx.beginPath();
+          ctx.arc(rx, ry, rad, 0, Math.PI * 2);
+          ctx.fill();
+        }
+
+        const tex = new THREE.CanvasTexture(c);
+        tex.wrapS = THREE.RepeatWrapping;
+        tex.wrapT = THREE.RepeatWrapping;
+        return tex;
+      }
+
+      const enamelTexture = createEnamelTexture();
+      const gingivaTexture = createGingivaTexture();
+
+      // Parabolic Human Dental Arch Calculator with Tight Anatomical Contact Points
       function getArchPosition(index, isMaxilla) {
-        // index 0 (molar 1/32) to 7 (central incisor 8/25) to 15 (molar 16/17)
-        // Normalized parameter t from -1.0 (Right posterior) to 0.0 (Anterior) to +1.0 (Left posterior)
+        // index 0 to 15 (molar to molar)
+        // t from -1.0 (Right posterior) to 0.0 (Anterior) to +1.0 (Left posterior)
         const t = (index - 7.5) / 7.5;
         
-        // Anatomical dental horseshoe:
-        // Width expands at molars: x = t * archWidth
-        const archWidth = isMaxilla ? 10.8 : 10.2;
+        // Anatomical horseshoe dimensions:
+        // Teeth touch adjacent contacts tightly without gaps
+        const archWidth = isMaxilla ? 9.8 : 9.3;
         const x = t * archWidth;
 
-        // Front teeth curve forward (+z), molars sweep backward (-z)
-        const archDepth = isMaxilla ? 9.5 : 9.0;
-        const z = (1.0 - Math.pow(Math.abs(t), 1.45)) * archDepth - 3.5;
+        // Front teeth curve forward (+z), back molars sweep back (-z)
+        const archDepth = isMaxilla ? 8.6 : 8.1;
+        const z = (1.0 - Math.pow(Math.abs(t), 1.55)) * archDepth - 3.2;
 
-        // Tangent angle facing outward
-        const angle = Math.atan2(-t * 1.8, 1.0);
+        const tangent = -t * 1.7;
+        const angle = Math.atan2(tangent, 1.0);
 
         return { x, z, angle };
       }
@@ -601,52 +658,59 @@
         const height = container.clientHeight;
 
         scene = new THREE.Scene();
-        scene.background = new THREE.Color(0x040812);
+        scene.background = new THREE.Color(0x030610);
 
-        camera = new THREE.PerspectiveCamera(38, width / height, 0.1, 1000);
-        camera.position.set(0, 14, 30);
+        camera = new THREE.PerspectiveCamera(34, width / height, 0.1, 1000);
+        camera.position.set(0, 1.5, 26); // Default direct Anterior Smile focus
 
-        renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+        renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, powerPreference: 'high-performance' });
         renderer.setSize(width, height);
         renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
         renderer.shadowMap.enabled = true;
         renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+        renderer.toneMapping = THREE.ACESFilmicToneMapping;
+        renderer.toneMappingExposure = 1.1;
         container.appendChild(renderer.domElement);
 
         controls = new THREE.OrbitControls(camera, renderer.domElement);
         controls.enableDamping = true;
-        controls.dampingFactor = 0.05;
+        controls.dampingFactor = 0.06;
         controls.target.set(0, 0, 0);
-        controls.maxDistance = 60;
+        controls.maxDistance = 50;
         controls.minDistance = 6;
 
-        // Surgical Operatory Illumination
-        const ambientLight = new THREE.AmbientLight(0xffffff, 0.75);
+        // Clinical Operatory Lighting (Multi-Point)
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.85);
         scene.add(ambientLight);
 
-        const keyLight = new THREE.DirectionalLight(0xffffff, 1.0);
-        keyLight.position.set(10, 20, 18);
+        const keyLight = new THREE.DirectionalLight(0xfffdfa, 1.15);
+        keyLight.position.set(10, 15, 20);
         scene.add(keyLight);
 
-        const fillLight = new THREE.DirectionalLight(0x38bdf8, 0.45);
-        fillLight.position.set(-15, 10, -10);
+        const fillLight = new THREE.DirectionalLight(0x93c5fd, 0.5);
+        fillLight.position.set(-15, 8, 10);
         scene.add(fillLight);
 
-        const bottomLight = new THREE.DirectionalLight(0x60a5fa, 0.35);
-        bottomLight.position.set(0, -15, 15);
+        const bottomLight = new THREE.DirectionalLight(0xffffff, 0.4);
+        bottomLight.position.set(0, -12, 10);
         scene.add(bottomLight);
 
-        // Active Tooth Beacon Ring
-        const beaconGeo = new THREE.RingGeometry(1.6, 1.8, 32);
+        // Active Beacon Ring
+        const beaconGeo = new THREE.RingGeometry(1.4, 1.6, 32);
         const beaconMat = new THREE.MeshBasicMaterial({ color: 0x38bdf8, side: THREE.DoubleSide, transparent: true, opacity: 0.85 });
         activeBeaconMesh = new THREE.Mesh(beaconGeo, beaconMat);
         activeBeaconMesh.rotation.x = Math.PI / 2;
         scene.add(activeBeaconMesh);
 
-        // Build Anatomical Dental Arches
+        // Build Jaws in Separate Moveable Groups for Occlusion Animation
+        upperArchGroup = new THREE.Group();
+        lowerArchGroup = new THREE.Group();
+        scene.add(upperArchGroup);
+        scene.add(lowerArchGroup);
+
         createDentalArches();
 
-        // Raycasting for tooth selection
+        // Raycasting
         const raycaster = new THREE.Raycaster();
         const mouse = new THREE.Vector2();
 
@@ -681,20 +745,20 @@
         renderer.setSize(width, height);
       }
 
-      // Create Number Badge Texture Sprite
+      // 3D Number Label Sprite
       function createNumberSprite(num) {
         const canvas = document.createElement('canvas');
         canvas.width = 64;
         canvas.height = 64;
         const ctx = canvas.getContext('2d');
 
-        ctx.fillStyle = 'rgba(15, 23, 42, 0.85)';
+        ctx.fillStyle = 'rgba(10, 16, 30, 0.85)';
         ctx.beginPath();
-        ctx.arc(32, 32, 28, 0, Math.PI * 2);
+        ctx.arc(32, 32, 26, 0, Math.PI * 2);
         ctx.fill();
 
         ctx.strokeStyle = '#38bdf8';
-        ctx.lineWidth = 3;
+        ctx.lineWidth = 2.5;
         ctx.stroke();
 
         ctx.fillStyle = '#ffffff';
@@ -706,98 +770,92 @@
         const texture = new THREE.CanvasTexture(canvas);
         const spriteMat = new THREE.SpriteMaterial({ map: texture, transparent: true });
         const sprite = new THREE.Sprite(spriteMat);
-        sprite.scale.set(1.4, 1.4, 1);
+        sprite.scale.set(1.3, 1.3, 1);
         return sprite;
       }
 
       // High-Fidelity Anatomical Tooth Mesh Builder
-      // Anatomical vertical logic:
-      // In local coordinates:
-      // Crown is placed towards the bite direction (occlusal)
-      // Roots are placed towards the jawbone
       function createAnatomicalToothMesh(toothMeta, isMaxilla) {
         const group = new THREE.Group();
         group.userData = { toothId: toothMeta.id, type: toothMeta.type, isMaxilla };
 
-        // Crown Enamel Material
+        const crownDir = isMaxilla ? -1 : 1;
+        const rootDir = isMaxilla ? 1 : -1;
+
+        // Realistic Enamel Material with Procedural Gradient
         const crownMat = new THREE.MeshStandardMaterial({
-          color: 0xfbf9f5, // Pearlescent enamel
-          roughness: 0.2,
-          metalness: 0.08,
-          emissive: 0x0f172a,
-          emissiveIntensity: 0.05
+          map: enamelTexture,
+          roughness: 0.16,
+          metalness: 0.05,
+          emissive: 0x080f1e,
+          emissiveIntensity: 0.08
         });
 
         // Root Cementum Material
         const rootMat = new THREE.MeshStandardMaterial({
-          color: 0xecdca5, // Natural root dentin
-          roughness: 0.55,
+          color: 0xead9a5,
+          roughness: 0.6,
           metalness: 0.02
         });
 
-        // Vertical directions:
-        // For Maxilla: Crown points DOWN (-Y), Root points UP (+Y)
-        // For Mandible: Crown points UP (+Y), Root points DOWN (-Y)
-        const crownDir = isMaxilla ? -1 : 1;
-        const rootDir = isMaxilla ? 1 : -1;
-
-        // 1. Anatomical Crown Geometry
-        let crownGeo;
+        // 1. Specialized Anatomical Crown Morphology
+        let crownMesh;
         if (toothMeta.type === 'molar') {
-          // 4-cusped molar block
-          crownGeo = new THREE.BoxGeometry(1.45, 1.5, 1.45, 2, 2, 2);
+          // Broad 4-cusped occlusal chewing surface
+          const geo = new THREE.BoxGeometry(1.65, 1.5, 1.6, 2, 2, 2);
+          crownMesh = new THREE.Mesh(geo, crownMat);
         } else if (toothMeta.type === 'premolar') {
-          crownGeo = new THREE.CylinderGeometry(0.85, 0.75, 1.4, 12);
+          // Bicuspid rounded crown
+          const geo = new THREE.CylinderGeometry(0.85, 0.8, 1.45, 16);
+          crownMesh = new THREE.Mesh(geo, crownMat);
         } else if (toothMeta.type === 'canine') {
-          crownGeo = new THREE.ConeGeometry(0.75, 1.7, 12);
+          // Pointed cuspid with prominent labial ridge
+          const geo = new THREE.ConeGeometry(0.85, 1.85, 16);
+          crownMesh = new THREE.Mesh(geo, crownMat);
+          if (isMaxilla) crownMesh.rotation.x = Math.PI;
         } else {
-          // Incisor: chisel spade
-          crownGeo = new THREE.BoxGeometry(1.2, 1.6, 0.45);
+          // Incisor: anatomical chisel spade with rounded embrasures
+          const geo = new THREE.BoxGeometry(1.35, 1.75, 0.45, 2, 2, 1);
+          crownMesh = new THREE.Mesh(geo, crownMat);
         }
 
-        const crownMesh = new THREE.Mesh(crownGeo, crownMat);
-        crownMesh.position.y = crownDir * 0.9;
-        if (toothMeta.type === 'canine' && isMaxilla) {
-          crownMesh.rotation.x = Math.PI; // Invert cone point down
-        }
+        crownMesh.position.y = crownDir * 0.95;
+        crownMesh.castShadow = true;
+        crownMesh.receiveShadow = true;
         group.add(crownMesh);
 
         // 2. Anatomical Roots
         for (let r = 0; r < toothMeta.roots; r++) {
-          const rootGeo = new THREE.ConeGeometry(0.32, 2.3, 8);
+          const rootGeo = new THREE.ConeGeometry(0.3, 2.2, 8);
           const rootMesh = new THREE.Mesh(rootGeo, rootMat);
+          const xOff = (r - (toothMeta.roots - 1) / 2) * 0.52;
           
           if (isMaxilla) {
-            // Root points UP (+Y)
-            rootMesh.rotation.x = 0;
-            const xOff = (r - (toothMeta.roots - 1) / 2) * 0.5;
-            rootMesh.position.set(xOff, 1.35, 0);
+            rootMesh.position.set(xOff, 1.4, 0);
           } else {
-            // Root points DOWN (-Y)
             rootMesh.rotation.x = Math.PI;
-            const xOff = (r - (toothMeta.roots - 1) / 2) * 0.5;
-            rootMesh.position.set(xOff, -1.35, 0);
+            rootMesh.position.set(xOff, -1.4, 0);
           }
           group.add(rootMesh);
         }
 
-        // 3. Probing Depth Ring (Cervical Collar Indicator)
-        const ringGeo = new THREE.TorusGeometry(1.2, 0.1, 8, 24);
+        // 3. Cervical Periodontal Pocket Ring Indicator
+        const ringGeo = new THREE.TorusGeometry(1.15, 0.08, 8, 24);
         const ringMat = new THREE.MeshBasicMaterial({ color: 0x10b981, transparent: true, opacity: 0.9 });
         const ringMesh = new THREE.Mesh(ringGeo, ringMat);
         ringMesh.rotation.x = Math.PI / 2;
-        ringMesh.position.y = 0; // sits right at cervical margin
+        ringMesh.position.y = 0;
         group.add(ringMesh);
 
-        // 4. Bleeding Droplet Indicator Particle
-        const bleedGeo = new THREE.SphereGeometry(0.28, 8, 8);
+        // 4. Bleeding Particle
+        const bleedGeo = new THREE.SphereGeometry(0.26, 8, 8);
         const bleedMat = new THREE.MeshBasicMaterial({ color: 0xef4444 });
         const bleedMesh = new THREE.Mesh(bleedGeo, bleedMat);
-        bleedMesh.position.set(0, crownDir * 1.5, 0.85);
+        bleedMesh.position.set(0, crownDir * 1.55, 0.75);
         bleedMesh.visible = false;
         group.add(bleedMesh);
 
-        // 5. 3D Floating Number Label Sprite
+        // 5. Floating Number Sprite
         const sprite = createNumberSprite(toothMeta.id);
         sprite.position.set(0, rootDir * 3.3, 0);
         group.add(sprite);
@@ -811,84 +869,154 @@
         return group;
       }
 
-      // Build the Anatomical Human Dental Arches
+      // Build Continuous Anatomical Gingiva with Interdental Papillae
+      function buildScallopedGingivalMesh(isMaxilla) {
+        const pointsOuter = [];
+        const pointsMargin = [];
+        const toothCount = 16;
+        const gumDir = isMaxilla ? 1 : -1;
+
+        for (let i = 0; i <= toothCount * 2; i++) {
+          const toothIndex = i / 2;
+          const pos = getArchPosition(Math.min(15, toothIndex), isMaxilla);
+          
+          // Alveolar ridge outer border
+          pointsOuter.push(new THREE.Vector3(pos.x * 1.15, gumDir * 3.6, pos.z * 1.05));
+
+          // Gingival margin: scallops down/up at teeth, peaks at interdental papillae between teeth
+          const isInterdental = (i % 2 !== 0);
+          const papillaOffset = isInterdental ? -gumDir * 0.45 : gumDir * 0.15;
+          const marginY = (gumDir * 1.7) + papillaOffset;
+
+          pointsMargin.push(new THREE.Vector3(pos.x, marginY, pos.z));
+        }
+
+        // Construct Ribbon Geometry between outer alveolar border and scalloped margin
+        const geom = new THREE.BufferGeometry();
+        const vertices = [];
+        const uvs = [];
+
+        for (let i = 0; i < pointsOuter.length; i++) {
+          const pOut = pointsOuter[i];
+          const pMar = pointsMargin[i];
+
+          vertices.push(pOut.x, pOut.y, pOut.z);
+          uvs.push(i / pointsOuter.length, 0.0);
+
+          vertices.push(pMar.x, pMar.y, pMar.z);
+          uvs.push(i / pointsOuter.length, 1.0);
+        }
+
+        const indices = [];
+        for (let i = 0; i < pointsOuter.length - 1; i++) {
+          const a = i * 2;
+          const b = i * 2 + 1;
+          const c = (i + 1) * 2;
+          const d = (i + 1) * 2 + 1;
+
+          if (isMaxilla) {
+            indices.push(a, b, c);
+            indices.push(b, d, c);
+          } else {
+            indices.push(a, c, b);
+            indices.push(b, c, d);
+          }
+        }
+
+        geom.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
+        geom.setAttribute('uv', new THREE.Float32BufferAttribute(uvs, 2));
+        geom.setIndex(indices);
+        geom.computeVertexNormals();
+
+        const mat = new THREE.MeshStandardMaterial({
+          map: gingivaTexture,
+          roughness: 0.32, // Moist mucosal sheen
+          metalness: 0.04,
+          side: THREE.DoubleSide
+        });
+
+        const mesh = new THREE.Mesh(geom, mat);
+        mesh.castShadow = true;
+        mesh.receiveShadow = true;
+        return mesh;
+      }
+
+      // Build Tongue in Mandible (Matches Reference Image 3)
+      function createAnatomicalTongue() {
+        const tongueGeo = new THREE.CylinderGeometry(4.2, 5.0, 1.2, 24);
+        tongueGeo.scale(1.0, 0.7, 1.5);
+        const tongueMat = new THREE.MeshStandardMaterial({
+          color: 0xb53e54, // Healthy dorsal lingual pink
+          roughness: 0.5,
+          metalness: 0.02
+        });
+        const tongue = new THREE.Mesh(tongueGeo, tongueMat);
+        tongue.position.set(0, -1.8, -2.5);
+        tongue.rotation.x = 0.15;
+        return tongue;
+      }
+
+      // Build Hard Palate in Maxilla
+      function createAnatomicalPalate() {
+        const palateGeo = new THREE.CylinderGeometry(4.5, 4.8, 0.8, 24);
+        palateGeo.scale(1.0, 0.6, 1.4);
+        const palateMat = new THREE.MeshStandardMaterial({
+          color: 0xc4576e,
+          roughness: 0.45,
+          metalness: 0.02
+        });
+        const palate = new THREE.Mesh(palateGeo, palateMat);
+        palate.position.set(0, 2.2, -2.5);
+        return palate;
+      }
+
       function createDentalArches() {
         const metadata = window.TEETH_METADATA;
 
-        // Examination Open-Bite Plane Gap
-        // Maxilla sits at Y = +1.6
-        // Mandible sits at Y = -1.6
-        const maxillaY = 1.6;
-        const mandibleY = -1.6;
-
-        // Build Maxilla (Teeth 1 to 16)
-        // Tooth 1 (Right 3rd Molar) -> Tooth 16 (Left 3rd Molar)
+        // Maxilla (Teeth 1 to 16)
         for (let i = 1; i <= 16; i++) {
           const meta = metadata.find(t => t.id === i);
           const mesh = createAnatomicalToothMesh(meta, true);
-
           const pos = getArchPosition(i - 1, true);
-          mesh.position.set(pos.x, maxillaY, pos.z);
+          mesh.position.set(pos.x, 1.7, pos.z);
           mesh.rotation.y = pos.angle;
-
-          scene.add(mesh);
+          upperArchGroup.add(mesh);
           toothMeshes[i] = mesh;
         }
 
-        // Build Mandible (Teeth 17 to 32)
-        // Tooth 17 (Left 3rd Molar) -> Tooth 32 (Right 3rd Molar)
+        // Add Maxillary Gums and Palate
+        const maxillaGingiva = buildScallopedGingivalMesh(true);
+        upperArchGroup.add(maxillaGingiva);
+        upperArchGroup.add(createAnatomicalPalate());
+
+        // Mandible (Teeth 17 to 32)
         for (let i = 17; i <= 32; i++) {
           const meta = metadata.find(t => t.id === i);
           const mesh = createAnatomicalToothMesh(meta, false);
-
-          // For mandible, 17 is Left molar (norm=15) down to 32 Right molar (norm=0)
           const archIdx = 32 - i;
           const pos = getArchPosition(archIdx, false);
-          mesh.position.set(pos.x, mandibleY, pos.z);
+          mesh.position.set(pos.x, -1.7, pos.z);
           mesh.rotation.y = pos.angle;
-
-          scene.add(mesh);
+          lowerArchGroup.add(mesh);
           toothMeshes[i] = mesh;
         }
 
-        // Build Realistic Anatomical Gingival (Gum) Arches
-        createRealisticGingiva();
+        // Add Mandibular Gums and Tongue
+        const mandibleGingiva = buildScallopedGingivalMesh(false);
+        lowerArchGroup.add(mandibleGingiva);
+        lowerArchGroup.add(createAnatomicalTongue());
       }
 
-      // Procedural Anatomical Gingival Tissue (Gums) hugging the tooth necks
-      function createRealisticGingiva() {
-        const gumMat = new THREE.MeshStandardMaterial({
-          color: 0xc86475, // Natural healthy coral pink
-          roughness: 0.65,
-          metalness: 0.05
-        });
+      // Smooth Camera Animation Target Helper
+      let targetCamPos = new THREE.Vector3(0, 1.5, 26);
+      let targetLookAt = new THREE.Vector3(0, 0, 0);
 
-        // Maxilla Gingival Ridge (Smooth arched horseshoe along alveolar crest)
-        const upperPoints = [];
-        for (let i = 0; i <= 15; i++) {
-          const pos = getArchPosition(i, true);
-          upperPoints.push(new THREE.Vector3(pos.x, 2.8, pos.z));
-        }
-        const upperCurve = new THREE.CatmullRomCurve3(upperPoints);
-        const upperGumGeo = new THREE.TubeGeometry(upperCurve, 40, 1.3, 10, false);
-        const upperGumMesh = new THREE.Mesh(upperGumGeo, gumMat);
-        scene.add(upperGumMesh);
-        gumMeshes.push(upperGumMesh);
-
-        // Mandible Gingival Ridge
-        const lowerPoints = [];
-        for (let i = 0; i <= 15; i++) {
-          const pos = getArchPosition(i, false);
-          lowerPoints.push(new THREE.Vector3(pos.x, -2.8, pos.z));
-        }
-        const lowerCurve = new THREE.CatmullRomCurve3(lowerPoints);
-        const lowerGumGeo = new THREE.TubeGeometry(lowerCurve, 40, 1.3, 10, false);
-        const lowerGumMesh = new THREE.Mesh(lowerGumGeo, gumMat);
-        scene.add(lowerGumMesh);
-        gumMeshes.push(lowerGumMesh);
+      function smoothCameraGlide(tx, ty, tz, lx, ly, lz) {
+        targetCamPos.set(tx, ty, tz);
+        targetLookAt.set(lx, ly, lz);
       }
 
-      // Animation Loop with FPS & Audio DSP Simulation
+      // Animation Loop
       let frameCount = 0;
       let lastTime = performance.now();
       const fpsElem = document.getElementById('fps-counter');
@@ -904,19 +1032,32 @@
           lastTime = time;
         }
 
-        // Update Active Beacon Position & Rotation
+        // Smooth Camera Interpolation
+        camera.position.lerp(targetCamPos, 0.08);
+        controls.target.lerp(targetLookAt, 0.08);
+
+        // Subtle Natural Idle Physiological Micro-Motion
+        const breath = Math.sin(time * 0.0012) * 0.035;
+        if (!isBiteClosed) {
+          upperArchGroup.position.y = breath;
+          lowerArchGroup.position.y = -breath;
+        }
+
+        // Active Beacon Ring
         if (engine.activeToothId && toothMeshes[engine.activeToothId]) {
           const activeMesh = toothMeshes[engine.activeToothId];
-          activeBeaconMesh.position.copy(activeMesh.position);
-          activeBeaconMesh.rotation.z += 0.03;
+          const worldPos = new THREE.Vector3();
+          activeMesh.getWorldPosition(worldPos);
+          activeBeaconMesh.position.copy(worldPos);
+          activeBeaconMesh.rotation.z += 0.04;
           activeBeaconMesh.visible = true;
 
           if (activeMesh.userData.ring) {
-            activeMesh.userData.ring.rotation.z += 0.04;
+            activeMesh.userData.ring.rotation.z += 0.05;
           }
         }
 
-        // Animate Bleeding Droplets
+        // Pulsing Bleeding Droplets
         for (let id = 1; id <= 32; id++) {
           const m = toothMeshes[id];
           if (m && m.userData.bleed && m.userData.bleed.visible) {
@@ -925,14 +1066,12 @@
           }
         }
 
-        // Render DSP Spectrum Canvas
         renderDSPSpectrum();
-
         controls.update();
         renderer.render(scene, camera);
       }
 
-      // Simulated Operatory Acoustic Spectrum Visualizer
+      // Operatory Audio DSP Spectrum Visualizer
       const dspCanvas = document.getElementById('canvas-dsp-spectrum');
       const dspCtx = dspCanvas.getContext('2d');
 
@@ -947,8 +1086,7 @@
         for (let b = 0; b < bars; b++) {
           let height = 3;
           if (isMicActive) {
-            // Voice frequency simulation with active high/low bandpass attenuation
-            const freqFactor = Math.sin(performance.now() * 0.01 + b * 0.6);
+            const freqFactor = Math.sin(performance.now() * 0.012 + b * 0.55);
             height = Math.max(3, Math.min(18, (freqFactor + 1.2) * 6 + (Math.random() * 4)));
           } else {
             height = 2 + Math.random() * 2;
@@ -959,7 +1097,7 @@
         }
       }
 
-      // Update 3D Tooth Coloration, Pocket Depths, and Dynamic Recession
+      // Update 3D Visuals based on Probing Depth & Dynamic Recession
       function update3DVisuals(treatmentHealingFactor = 0) {
         for (let id = 1; id <= 32; id++) {
           const toothData = engine.teeth[id];
@@ -972,7 +1110,6 @@
 
           window.SITES.forEach(s => {
             let d = toothData.probing[s];
-            // Apply healing simulator
             if (treatmentHealingFactor > 0) {
               d = Math.round(d - (d - 2) * (treatmentHealingFactor / 100));
             }
@@ -981,7 +1118,7 @@
             if (toothData.suppuration[s] && treatmentHealingFactor < 40) hasSuppuration = true;
           });
 
-          // Dynamic Ring Color
+          // Ring Color
           let ringColor = 0x10b981; // Green
           if (maxD >= 5) {
             ringColor = 0xef4444; // Crimson Red
@@ -990,63 +1127,70 @@
           }
           mesh.userData.ring.material.color.setHex(ringColor);
 
-          // Dynamic Gingival Recession:
-          // In severe pockets, ring and tissue vertically displace towards the root
+          // Dynamic Gingival Recession
           const isMaxilla = mesh.userData.isMaxilla;
           const recessionShift = Math.max(0, (maxD - 3) * 0.22);
           mesh.userData.ring.position.y = isMaxilla ? recessionShift : -recessionShift;
 
-          // Enamel Color & Highlight
+          // Enamel Color Highlight
           if (!isXRayMode) {
             if (id === engine.activeToothId) {
               mesh.userData.crown.material.emissive.setHex(0x0284c7);
               mesh.userData.crown.material.emissiveIntensity = 0.45;
             } else if (maxD >= 5) {
               mesh.userData.crown.material.emissive.setHex(0x991b1b);
-              mesh.userData.crown.material.emissiveIntensity = 0.3;
+              mesh.userData.crown.material.emissiveIntensity = 0.28;
             } else if (maxD === 4) {
               mesh.userData.crown.material.emissive.setHex(0x92400e);
-              mesh.userData.crown.material.emissiveIntensity = 0.18;
+              mesh.userData.crown.material.emissiveIntensity = 0.16;
             } else {
-              mesh.userData.crown.material.emissive.setHex(0x0f172a);
+              mesh.userData.crown.material.emissive.setHex(0x080f1e);
               mesh.userData.crown.material.emissiveIntensity = 0.05;
             }
           }
 
-          // Bleeding Particle Marker
           mesh.userData.bleed.visible = hasBleeding;
           if (hasSuppuration) {
-            mesh.userData.bleed.material.color.setHex(0xfacc15); // Suppuration pus yellow
+            mesh.userData.bleed.material.color.setHex(0xfacc15);
           } else {
             mesh.userData.bleed.material.color.setHex(0xef4444);
           }
         }
       }
 
-      // Camera Presets
+      // Camera Presets & Occlusion Toggles
       function setupCameraPresets() {
+        document.getElementById('cam-preset-front').addEventListener('click', () => {
+          smoothCameraGlide(0, 0.8, 25, 0, 0, 0);
+        });
         document.getElementById('cam-preset-full').addEventListener('click', () => {
-          camera.position.set(0, 14, 30);
-          controls.target.set(0, 0, 0);
-          controls.update();
+          smoothCameraGlide(0, 12, 28, 0, 0, 0);
         });
         document.getElementById('cam-preset-maxilla').addEventListener('click', () => {
-          camera.position.set(0, 26, 4);
-          controls.target.set(0, 1.6, 0);
-          controls.update();
+          smoothCameraGlide(0, 25, 4, 0, 1.7, 0);
         });
         document.getElementById('cam-preset-mandible').addEventListener('click', () => {
-          camera.position.set(0, -26, 4);
-          controls.target.set(0, -1.6, 0);
-          controls.update();
-        });
-        document.getElementById('cam-preset-front').addEventListener('click', () => {
-          camera.position.set(0, 0, 28);
-          controls.target.set(0, 0, 0);
-          controls.update();
+          smoothCameraGlide(0, -25, 4, 0, -1.7, 0);
         });
 
-        // X-Ray Relief Shader Toggle
+        // Bite Occlusion Toggle (Open Examination vs Closed Bite)
+        const biteBtn = document.getElementById('btn-toggle-bite');
+        biteBtn.addEventListener('click', () => {
+          isBiteClosed = !isBiteClosed;
+          if (isBiteClosed) {
+            upperArchGroup.position.y = -0.9;
+            lowerArchGroup.position.y = 0.9;
+            biteBtn.textContent = "Bite: Closed Occlusion";
+            biteBtn.className = "px-2.5 py-1 rounded bg-blue-950/90 backdrop-blur border border-blue-700 text-[11px] text-blue-300 transition font-medium";
+          } else {
+            upperArchGroup.position.y = 0;
+            lowerArchGroup.position.y = 0;
+            biteBtn.textContent = "Bite: Open View";
+            biteBtn.className = "px-2.5 py-1 rounded bg-slate-900/90 backdrop-blur border border-slate-700 hover:border-cyan-500 text-[11px] text-cyan-300 transition font-medium";
+          }
+        });
+
+        // Radiographic X-Ray Shader Toggle
         const shaderBtn = document.getElementById('view-mode-toggle');
         shaderBtn.addEventListener('click', () => {
           isXRayMode = !isXRayMode;
@@ -1057,12 +1201,12 @@
             if (!m) continue;
             if (isXRayMode) {
               m.userData.crown.material.transparent = true;
-              m.userData.crown.material.opacity = 0.4;
+              m.userData.crown.material.opacity = 0.38;
               m.userData.crown.material.color.setHex(0x38bdf8);
             } else {
               m.userData.crown.material.transparent = false;
               m.userData.crown.material.opacity = 1.0;
-              m.userData.crown.material.color.setHex(0xfbf9f5);
+              m.userData.crown.material.color.setHex(0xffffff);
             }
           }
           update3DVisuals();
@@ -1078,7 +1222,7 @@
           }
         });
 
-        // Treatment Simulator Slider
+        // Case Acceptance Healing Simulator Slider
         const slider = document.getElementById('treatment-slider');
         const sliderLabel = document.getElementById('label-slider-state');
         slider.addEventListener('input', (e) => {
@@ -1097,13 +1241,21 @@
         });
       }
 
-      // 3. UI Synchronization Functions
+      // UI Synchronization Functions
       function selectTooth(toothId) {
         engine.selectTooth(toothId);
         updateActiveToothHUD();
         update2DChart();
         updateDiagnostics();
         update3DVisuals();
+
+        // Smooth camera glide to active tooth quadrant
+        const activeMesh = toothMeshes[toothId];
+        if (activeMesh) {
+          const worldPos = new THREE.Vector3();
+          activeMesh.getWorldPosition(worldPos);
+          smoothCameraGlide(worldPos.x * 1.3, worldPos.y * 1.2, 22, worldPos.x * 0.4, worldPos.y * 0.4, 0);
+        }
       }
 
       function updateActiveToothHUD() {
@@ -1144,7 +1296,6 @@
         tbodyMaxilla.innerHTML = '';
         tbodyMandible.innerHTML = '';
 
-        // Maxilla (Teeth 1-16)
         window.SITES.forEach(site => {
           const tr = document.createElement('tr');
           tr.className = "border-b border-slate-800/60";
@@ -1167,7 +1318,6 @@
           tbodyMaxilla.appendChild(tr);
         });
 
-        // Mandible (Teeth 17-32)
         window.SITES.forEach(site => {
           const tr = document.createElement('tr');
           tr.className = "border-b border-slate-800/60";
@@ -1259,7 +1409,7 @@
         });
       }
 
-      // 4. Web Speech API & Voice Handling
+      // Voice Engine
       let recognition = null;
       let isRecording = false;
 
@@ -1327,7 +1477,6 @@
         }
       });
 
-      // Suction Noise Filter Simulator Toggle
       let noiseFilterActive = true;
       document.getElementById('btn-toggle-noise-filter').addEventListener('click', () => {
         noiseFilterActive = !noiseFilterActive;
@@ -1346,7 +1495,6 @@
         }
       });
 
-      // Undo button
       document.getElementById('btn-voice-rollback').addEventListener('click', () => {
         const undone = engine.rollbackLast();
         if (undone) {
@@ -1358,7 +1506,7 @@
         }
       });
 
-      // 5. One-Click Demonstration Simulation Presets
+      // Simulation Presets
       document.getElementById('demo-routine').addEventListener('click', () => {
         engine.initChart();
         document.getElementById('treatment-slider').value = 0;
@@ -1394,11 +1542,7 @@
           engine.setMeasurement(tId, "DL", 8, true, true);
         });
 
-        engine.selectTooth(3);
-        updateActiveToothHUD();
-        update2DChart();
-        updateDiagnostics();
-        update3DVisuals();
+        selectTooth(3);
       });
 
       document.getElementById('demo-rollback').addEventListener('click', () => {
@@ -1431,7 +1575,7 @@
         update3DVisuals();
       });
 
-      // 6. Insurance Dossier Modal Setup
+      // Modals
       const modalDossier = document.getElementById('modal-dossier');
       document.getElementById('btn-insurance-modal').addEventListener('click', openInsuranceModal);
       document.getElementById('btn-close-modal').addEventListener('click', () => modalDossier.classList.add('hidden'));
@@ -1485,7 +1629,6 @@
         });
       });
 
-      // 7. CareStack FHIR / JSON API Modal
       const modalApi = document.getElementById('modal-api');
       document.getElementById('btn-carestack-api').addEventListener('click', () => {
         const payload = engine.exportCareStackPayload("CS-2026-88941");
@@ -1504,7 +1647,6 @@
         });
       });
 
-      // Numbering System Switcher
       document.getElementById('badge-system-select').addEventListener('click', () => {
         if (engine.numberingSystem === "universal") {
           engine.numberingSystem = "fdi";
@@ -1516,7 +1658,6 @@
         updateActiveToothHUD();
       });
 
-      // Initialize
       initThree();
       setupCameraPresets();
       build2DChart();
