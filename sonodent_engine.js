@@ -168,9 +168,109 @@
 
     parseVoiceTranscript(text) {
       if (!text || typeof text !== "string") return [];
-      const clean = text.toLowerCase().trim();
-      const tokens = clean.split(/\s+/);
+      let clean = text.toLowerCase().trim();
+
+      // 1. Phonetic replacement for tooth indicator before numbers or digits
+      // Handles "to 14", "too 14", "two 14", "to the 14", "teeth 14", "number 14", "tooth #14", "tooth14", "to 14546"
+      clean = clean.replace(/\b(to\s+the|tooth|teeth|number|to|too|two)\s*#?\s*([0-9]+)\b/g, (m, prefix, numStr) => {
+        if (numStr.length >= 2) {
+          const firstTwo = parseInt(numStr.slice(0, 2), 10);
+          if (firstTwo >= 1 && firstTwo <= 32) {
+            const rest = numStr.slice(2).split("").join(" ");
+            return `tooth ${firstTwo} ${rest}`.trim();
+          }
+        }
+        if (numStr.length >= 1) {
+          const firstOne = parseInt(numStr.slice(0, 1), 10);
+          if (firstOne >= 1 && firstOne <= 9) {
+            if (numStr.length === 1) return `tooth ${firstOne}`;
+            const rest = numStr.slice(1).split("").join(" ");
+            return `tooth ${firstOne} ${rest}`.trim();
+          }
+        }
+        return m;
+      });
+
+      // 2. Map word numbers to digits
+      const wordMap = [
+        ["thirty two", "32"], ["thirty-two", "32"],
+        ["thirty one", "31"], ["thirty-one", "31"],
+        ["thirty", "30"],
+        ["twenty nine", "29"], ["twenty-nine", "29"],
+        ["twenty eight", "28"], ["twenty-eight", "28"],
+        ["twenty seven", "27"], ["twenty-seven", "27"],
+        ["twenty six", "26"], ["twenty-six", "26"],
+        ["twenty five", "25"], ["twenty-five", "25"],
+        ["twenty four", "24"], ["twenty-four", "24"],
+        ["twenty three", "23"], ["twenty-three", "23"],
+        ["twenty two", "22"], ["twenty-two", "22"],
+        ["twenty one", "21"], ["twenty-one", "21"],
+        ["twenty", "20"],
+        ["nineteen", "19"], ["eighteen", "18"], ["seventeen", "17"],
+        ["sixteen", "16"], ["fifteen", "15"], ["fourteen", "14"],
+        ["thirteen", "13"], ["twelve", "12"], ["eleven", "11"],
+        ["ten", "10"], ["nine", "9"], ["eight", "8"], ["ate", "8"],
+        ["seven", "7"], ["six", "6"], ["five", "5"],
+        ["four", "4"], ["for", "4"], ["fore", "4"],
+        ["three", "3"], ["tree", "3"], ["two", "2"],
+        ["one", "1"], ["won", "1"], ["zero", "0"]
+      ];
+
+      // Handle word numbers after tooth indicators (e.g. "to fourteen", "tooth fourteen")
+      clean = clean.replace(/\b(to\s+the|tooth|teeth|number|to|too)\s+(one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve|thirteen|fourteen|fifteen|sixteen|seventeen|eighteen|nineteen|twenty|thirty)/g, "tooth $2");
+
+      for (let j = 0; j < wordMap.length; j++) {
+        const w = wordMap[j][0];
+        const d = wordMap[j][1];
+        clean = clean.replace(new RegExp("\\b" + w + "\\b", "g"), d);
+      }
+
+      // Re-normalize if "to" preceded a converted number
+      clean = clean.replace(/\b(to|too)\s+(\d{1,2})\b/g, "tooth $2");
+
+      // 3. Tokenize and expand numbers
+      const rawTokens = clean.split(/[\s,]+/);
+      const tokens = [];
+
+      let k = 0;
+      while (k < rawTokens.length) {
+        const t = rawTokens[k];
+        if (!t) { k++; continue; }
+
+        if (t === "tooth" && k + 1 < rawTokens.length && /^\d+$/.test(rawTokens[k + 1])) {
+          tokens.push("tooth");
+          tokens.push(rawTokens[k + 1]);
+          k += 2;
+          continue;
+        }
+
+        if (/^\d{2,}$/.test(t)) {
+          const val = parseInt(t, 10);
+          // Standalone 4-5 digit number starting with valid tooth 1..32 (e.g. 14546)
+          if (t.length >= 4) {
+            const firstTwo = parseInt(t.slice(0, 2), 10);
+            if (firstTwo >= 1 && firstTwo <= 32) {
+              tokens.push("tooth");
+              tokens.push(String(firstTwo));
+              for (let c = 2; c < t.length; c++) tokens.push(t[c]);
+              k++;
+              continue;
+            }
+          }
+          // If > 15, split into individual depths (e.g. 546 -> 5, 4, 6)
+          if (val > 15) {
+            for (let c = 0; c < t.length; c++) tokens.push(t[c]);
+          } else {
+            tokens.push(t);
+          }
+        } else {
+          tokens.push(t);
+        }
+        k++;
+      }
+
       const actions = [];
+      let lastMeasuredSite = null;
 
       let i = 0;
       while (i < tokens.length) {
@@ -179,6 +279,7 @@
         if (tok === "scratch" || tok === "undo" || tok === "cancel" || tok === "back") {
           const undone = this.rollbackLast();
           actions.push({ type: "rollback", item: undone });
+          lastMeasuredSite = null;
           i++;
           continue;
         }
@@ -188,6 +289,7 @@
           if (tNum) {
             this.selectTooth(tNum);
             actions.push({ type: "select_tooth", toothId: this.activeToothId });
+            lastMeasuredSite = null;
             i += 2;
             continue;
           }
@@ -197,21 +299,22 @@
         if (siteMatch) {
           this.activeSiteIndex = SITES.indexOf(siteMatch);
           actions.push({ type: "select_site", site: siteMatch });
+          lastMeasuredSite = null;
           i++;
           continue;
         }
 
         if (tok === "bleeding" || tok === "blood" || tok === "bleed" || tok === "bop") {
-          const currSite = SITES[this.activeSiteIndex];
-          this.setMeasurement(this.activeToothId, currSite, null, true);
-          actions.push({ type: "condition", toothId: this.activeToothId, site: currSite, condition: "bleeding" });
+          const targetSite = lastMeasuredSite || SITES[this.activeSiteIndex];
+          this.setMeasurement(this.activeToothId, targetSite, null, true);
+          actions.push({ type: "condition", toothId: this.activeToothId, site: targetSite, condition: "bleeding" });
           i++;
           continue;
         }
         if (tok === "pus" || tok === "suppuration") {
-          const currSite = SITES[this.activeSiteIndex];
-          this.setMeasurement(this.activeToothId, currSite, null, null, true);
-          actions.push({ type: "condition", toothId: this.activeToothId, site: currSite, condition: "suppuration" });
+          const targetSite = lastMeasuredSite || SITES[this.activeSiteIndex];
+          this.setMeasurement(this.activeToothId, targetSite, null, null, true);
+          actions.push({ type: "condition", toothId: this.activeToothId, site: targetSite, condition: "suppuration" });
           i++;
           continue;
         }
@@ -221,6 +324,7 @@
           const currSite = SITES[this.activeSiteIndex];
           this.setMeasurement(this.activeToothId, currSite, numVal);
           actions.push({ type: "measurement", toothId: this.activeToothId, site: currSite, depth: numVal });
+          lastMeasuredSite = currSite;
           this.advanceSite();
           i++;
           continue;
@@ -241,7 +345,8 @@
         zero: 0, one: 1, won: 1, two: 2, to: 2, too: 2, three: 3, tree: 3,
         four: 4, for: 4, fore: 4, five: 5, six: 6, seven: 7, eight: 8, ate: 8,
         nine: 9, niner: 9, ten: 10, eleven: 11, twelve: 12, thirteen: 13,
-        fourteen: 14, fifteen: 15
+        fourteen: 14, fifteen: 15, sixteen: 16, seventeen: 17, eighteen: 18,
+        nineteen: 19, twenty: 20, thirty: 30, "thirty one": 31, "thirty two": 32
       };
       return map[word] !== undefined ? map[word] : null;
     }

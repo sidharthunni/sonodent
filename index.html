@@ -1476,13 +1476,26 @@
                 update3DVisuals();
 
                 // Spoken confirmation to hygienist
-                const lastAction = actions[actions.length - 1];
-                if (lastAction.type === 'measurement') {
-                  speakConfirmation(`Tooth ${lastAction.toothId}, ${lastAction.depth} millimeters`);
-                } else if (lastAction.type === 'condition') {
-                  speakConfirmation(`${lastAction.condition} noted on tooth ${lastAction.toothId}`);
-                } else if (lastAction.type === 'rollback') {
+                const measurements = actions.filter(a => a.type === 'measurement');
+                const condition = actions.find(a => a.type === 'condition');
+                const rollback = actions.find(a => a.type === 'rollback');
+                const toothSelect = actions.find(a => a.type === 'select_tooth');
+
+                if (rollback) {
                   speakConfirmation("Entry undone");
+                } else if (measurements.length > 0) {
+                  const toothId = measurements[0].toothId;
+                  const depths = measurements.map(m => m.depth).join(", ");
+                  const condText = condition ? `, ${condition.condition} noted` : "";
+                  if (measurements.length === 1) {
+                    speakConfirmation(`Tooth ${toothId}, ${measurements[0].depth} millimeters${condText}`);
+                  } else {
+                    speakConfirmation(`Tooth ${toothId}, ${depths}${condText}`);
+                  }
+                } else if (condition) {
+                  speakConfirmation(`${condition.condition} noted on tooth ${condition.toothId}`);
+                } else if (toothSelect) {
+                  speakConfirmation(`Tooth ${toothSelect.toothId} selected`);
                 }
               }
             } else {
