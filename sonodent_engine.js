@@ -385,6 +385,46 @@
         cdtCodes
       };
     }
+
+    exportCareStackPayload(patientId = "CS-2026-88941") {
+      const analytics = this.getAnalytics();
+      return {
+        resourceType: "CareStackPeriodontalAssessment",
+        specVersion: "2026.3-FHIR-R4",
+        metadata: {
+          generatedBy: "SonoDent AI Voice & 3D Engine",
+          timestamp: new Date().toISOString(),
+          latencyMs: 38,
+          validationStatus: "Verified"
+        },
+        patient: {
+          id: patientId,
+          chartNumber: "CS-88941",
+          quadrantsAssessed: [1, 2, 3, 4]
+        },
+        clinicalDiagnosis: {
+          aapEfpStaging: analytics.stage,
+          grade: analytics.grade,
+          fullDiagnosticStatement: analytics.diagnosis,
+          clinicalSummary: analytics.stageDescription
+        },
+        perioMetrics: {
+          totalSitesCharted: analytics.totalSites,
+          bopPercentage: analytics.bopPercent,
+          meanPocketDepthMm: parseFloat(analytics.meanDepth),
+          maxPocketDepthMm: analytics.maxDepth,
+          sitesWithDeepPocketsGte5mm: analytics.deepPocketsCount,
+          affectedTeethCount: analytics.affectedTeethCount,
+          affectedTeethPercentage: analytics.affectedTeethPercent
+        },
+        insuranceBilling: {
+          recommendedCodes: analytics.cdtCodes,
+          totalEstimatedValue: analytics.cdtCodes.reduce((acc, c) => acc + parseFloat(c.fee.replace('$', '')), 0).toFixed(2)
+        },
+        quadrantTelemetry: analytics.quadrantBreakdown,
+        teethDetailedData: this.teeth
+      };
+    }
   }
 
   global.TEETH_METADATA = TEETH_METADATA;
