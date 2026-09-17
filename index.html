@@ -280,14 +280,22 @@
             </div>
           </div>
 
-          <!-- Noise Gate Toggle & Voice Undo -->
+          <!-- Noise Gate Toggle, Voice Readback & Voice Undo -->
           <div class="flex items-center space-x-2">
+            <button id="btn-toggle-readback" class="px-2.5 py-1.5 rounded bg-slate-800 hover:bg-slate-700 border border-slate-700 text-[11px] text-cyan-300 transition font-medium">
+              Audio Readback: ON
+            </button>
             <button id="btn-toggle-noise-filter" class="px-2.5 py-1.5 rounded bg-slate-800 hover:bg-slate-700 border border-slate-700 text-[11px] text-slate-300 transition">
               Suction Filter: Active
             </button>
-            <button id="btn-voice-rollback" class="px-2.5 py-1.5 rounded bg-slate-800 hover:bg-amber-950 hover:border-amber-700 border border-slate-700 text-[11px] text-amber-300 transition font-medium" title="Undo last voice entry">
+            <button id="btn-voice-rollback" class="px-2.5 py-1.5 rounded bg-slate-800 hover:bg-amber-950 hover:border-amber-700 border border-slate-700 text-[11px] text-amber-300 transition font-medium" title="Undo last voice entry (Hotkey: U)">
               Undo ("Scratch that")
             </button>
+            <div class="hidden xl:flex items-center space-x-1 text-[10px] font-mono text-slate-400 pl-1">
+              <span class="px-1.5 py-0.5 rounded bg-slate-900 border border-slate-800">Space: Mic</span>
+              <span class="px-1.5 py-0.5 rounded bg-slate-900 border border-slate-800">U: Undo</span>
+              <span class="px-1.5 py-0.5 rounded bg-slate-900 border border-slate-800">B: Bite</span>
+            </div>
           </div>
         </div>
 
@@ -1071,9 +1079,30 @@
         renderer.render(scene, camera);
       }
 
-      // Operatory Audio DSP Spectrum Visualizer
+      // Operatory Audio DSP Spectrum Visualizer (Web Audio API + Real Mic Input)
       const dspCanvas = document.getElementById('canvas-dsp-spectrum');
       const dspCtx = dspCanvas.getContext('2d');
+      let realAudioCtx = null;
+      let realAnalyser = null;
+      let realDataArray = null;
+      let realMicStream = null;
+
+      function initRealMicAudio() {
+        if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia && !realAudioCtx) {
+          navigator.mediaDevices.getUserMedia({ audio: true }).then(stream => {
+            realMicStream = stream;
+            realAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            const source = realAudioCtx.createMediaStreamSource(stream);
+            realAnalyser = realAudioCtx.createAnalyser();
+            realAnalyser.fftSize = 64;
+            realAnalyser.smoothingTimeConstant = 0.75;
+            source.connect(realAnalyser);
+            realDataArray = new Uint8Array(realAnalyser.frequencyBinCount);
+          }).catch(err => {
+            console.log("Using internal DSP frequency simulator:", err);
+          });
+        }
+      }
 
       function renderDSPSpectrum() {
         dspCtx.fillStyle = '#020617';
@@ -1082,6 +1111,17 @@
         const bars = 16;
         const barWidth = dspCanvas.width / bars - 2;
         const isMicActive = isRecording;
+
+        if (realAnalyser && realDataArray && isMicActive) {
+          realAnalyser.getByteFrequencyData(realDataArray);
+          for (let b = 0; b < bars; b++) {
+            const val = realDataArray[b * 2] || 0;
+            const height = Math.max(3, Math.min(18, (val / 255) * 20));
+            dspCtx.fillStyle = '#38bdf8';
+            dspCtx.fillRect(b * (barWidth + 2), dspCanvas.height - height, barWidth, height);
+          }
+          return;
+        }
 
         for (let b = 0; b < bars; b++) {
           let height = 3;
@@ -1434,6 +1474,16 @@
                 update2DChart();
                 updateDiagnostics();
                 update3DVisuals();
+
+                // Spoken confirmation to hygienist
+                const lastAction = actions[actions.length - 1];
+                if (lastAction.type === 'measurement') {
+                  speakConfirmation(`Tooth ${lastAction.toothId}, ${lastAction.depth} millimeters`);
+                } else if (lastAction.type === 'condition') {
+                  speakConfirmation(`${lastAction.condition} noted on tooth ${lastAction.toothId}`);
+                } else if (lastAction.type === 'rollback') {
+                  speakConfirmation("Entry undone");
+                }
               }
             } else {
               interimTranscript += transcript;
@@ -1452,12 +1502,41 @@
         };
       }
 
+      // Audio Readback Engine (SpeechSynthesis)
+      let readbackActive = true;
+      const btnReadback = document.getElementById('btn-toggle-readback');
+      if (btnReadback) {
+        btnReadback.addEventListener('click', () => {
+          readbackActive = !readbackActive;
+          if (readbackActive) {
+            btnReadback.textContent = "Audio Readback: ON";
+            btnReadback.className = "px-2.5 py-1.5 rounded bg-slate-800 hover:bg-slate-700 border border-slate-700 text-[11px] text-cyan-300 transition font-medium";
+          } else {
+            btnReadback.textContent = "Audio Readback: OFF";
+            btnReadback.className = "px-2.5 py-1.5 rounded bg-slate-900 hover:bg-slate-800 border border-slate-800 text-[11px] text-slate-500 transition font-medium";
+          }
+        });
+      }
+
+      function speakConfirmation(text) {
+        if (!readbackActive || !window.speechSynthesis) return;
+        try {
+          window.speechSynthesis.cancel();
+          const u = new SpeechSynthesisUtterance(text);
+          u.rate = 1.35;
+          u.pitch = 1.05;
+          u.volume = 0.65;
+          window.speechSynthesis.speak(u);
+        } catch(e) {}
+      }
+
       const btnVoice = document.getElementById('btn-voice-toggle');
       const voiceIndicator = document.getElementById('voice-indicator');
       const voiceText = document.getElementById('voice-btn-text');
 
       btnVoice.addEventListener('click', () => {
         if (!recognition) initVoiceRecognition();
+        initRealMicAudio();
 
         if (!isRecording) {
           try {
@@ -1499,10 +1578,38 @@
         const undone = engine.rollbackLast();
         if (undone) {
           document.getElementById('transcription-tape').textContent = `ROLLBACK: Restored Tooth #${undone.toothId} ${undone.site} to ${undone.prevProbing}mm`;
+          speakConfirmation("Undone");
           updateActiveToothHUD();
           update2DChart();
           updateDiagnostics();
           update3DVisuals();
+        }
+      });
+
+      // Presenter Hotkeys for Live Judging Sessions
+      window.addEventListener('keydown', (e) => {
+        if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+
+        if (e.code === 'Space') {
+          e.preventDefault();
+          btnVoice.click();
+        } else if (e.key === 'u' || e.key === 'U' || (e.ctrlKey && e.key === 'z')) {
+          e.preventDefault();
+          document.getElementById('btn-voice-rollback').click();
+        } else if (e.key === 'b' || e.key === 'B') {
+          e.preventDefault();
+          document.getElementById('btn-toggle-bite').click();
+        } else if (e.key === 'x' || e.key === 'X') {
+          e.preventDefault();
+          document.getElementById('view-mode-toggle').click();
+        } else if (e.key === '1') {
+          document.getElementById('demo-routine').click();
+        } else if (e.key === '2') {
+          document.getElementById('demo-severe').click();
+        } else if (e.key === '3') {
+          document.getElementById('demo-rollback').click();
+        } else if (e.key === '0') {
+          document.getElementById('demo-reset').click();
         }
       });
 
