@@ -1457,10 +1457,43 @@
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
         if (!SpeechRecognition) return;
 
+        if (recognition) {
+          try { recognition.abort(); } catch(e) {}
+          recognition = null;
+        }
+
         recognition = new SpeechRecognition();
         recognition.continuous = true;
         recognition.interimResults = true;
-        recognition.lang = 'en-US';
+        // Align with user system locale (en-IN for India, or system default)
+        recognition.lang = (navigator.language && navigator.language.startsWith('en')) ? navigator.language : 'en-IN';
+        recognition.maxAlternatives = 3;
+
+        let restartTimer = null;
+        function scheduleRestart(delay = 150) {
+          if (!isRecording) return;
+          if (restartTimer) clearTimeout(restartTimer);
+          restartTimer = setTimeout(() => {
+            if (!isRecording) return;
+            try {
+              recognition.start();
+            } catch(e) {
+              try {
+                initVoiceRecognition();
+                if (isRecording && recognition) recognition.start();
+              } catch(err) {}
+            }
+          }, delay);
+        }
+
+        recognition.onaudiostart = () => {
+          if (isRecording) {
+            const tape = document.getElementById('transcription-tape');
+            if (tape && tape.textContent.startsWith("Listening")) {
+              tape.textContent = "MIC ACTIVE: Ready for dictation (e.g. 'Tooth 14, 5, 4, 6')...";
+            }
+          }
+        };
 
         recognition.onresult = (event) => {
           let interimTranscript = '';
@@ -1511,10 +1544,24 @@
           }
         };
 
-        recognition.onerror = (err) => console.error("Speech Recognition Error:", err);
+        recognition.onerror = (event) => {
+          console.warn("Speech Recognition Error:", event.error);
+          if (event.error === 'not-allowed' || event.error === 'service-not-allowed') {
+            isRecording = false;
+            const ind = document.getElementById('voice-indicator');
+            const txt = document.getElementById('voice-btn-text');
+            if (ind) ind.className = "w-2.5 h-2.5 rounded-full bg-white inline-block";
+            if (txt) txt.textContent = "Start Hands-Free Voice";
+            document.getElementById('transcription-tape').textContent = "Microphone permission denied. Please allow microphone access in your browser.";
+          } else if (event.error === 'no-speech' || event.error === 'aborted' || event.error === 'network') {
+            // Reconnect quietly on pauses
+            scheduleRestart(200);
+          }
+        };
+
         recognition.onend = () => {
           if (isRecording) {
-            try { recognition.start(); } catch(e) {}
+            scheduleRestart(150);
           }
         };
       }
@@ -1552,24 +1599,27 @@
       const voiceText = document.getElementById('voice-btn-text');
 
       btnVoice.addEventListener('click', () => {
-        if (!recognition) initVoiceRecognition();
         initRealMicAudio();
 
         if (!isRecording) {
+          isRecording = true;
+          initVoiceRecognition();
           try {
             if (recognition) recognition.start();
-            isRecording = true;
-            voiceIndicator.className = "w-2.5 h-2.5 rounded-full bg-red-400 inline-block recording-pulse";
-            voiceText.textContent = "Listening Hands-Free...";
-            document.getElementById('transcription-tape').textContent = "Listening: Say 'tooth 14, 5, 4, 6, bleeding'...";
-          } catch(e) { console.error(e); }
+          } catch(e) {
+            console.error(e);
+          }
+          voiceIndicator.className = "w-2.5 h-2.5 rounded-full bg-red-400 inline-block recording-pulse";
+          voiceText.textContent = "Listening Hands-Free...";
+          document.getElementById('transcription-tape').textContent = "MIC ACTIVE: Ready for dictation (e.g. 'Tooth 14, 5, 4, 6')...";
         } else {
+          isRecording = false;
           try {
             if (recognition) recognition.stop();
-            isRecording = false;
-            voiceIndicator.className = "w-2.5 h-2.5 rounded-full bg-white inline-block";
-            voiceText.textContent = "Start Hands-Free Voice";
-          } catch(e) { console.error(e); }
+          } catch(e) {}
+          voiceIndicator.className = "w-2.5 h-2.5 rounded-full bg-white inline-block";
+          voiceText.textContent = "Start Hands-Free Voice";
+          document.getElementById('transcription-tape').textContent = "Voice paused. Click 'Start Hands-Free Voice' to dictate.";
         }
       });
 
