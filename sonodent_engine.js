@@ -382,8 +382,8 @@
       let clean = text.toLowerCase().trim();
 
       // 0. Hands-Free Operatory Wake-Word & Standby Gating (Phonetic Tolerant)
-      const wakeRegex = /\b((?:hey|hi|hello|ok|okay)?\s*(?:sono\s*dent|sonodent|sono\s*dont|sono\s*den|sono|assistant)\s*(?:wake\s*up|wake|start|listen|resume|active)?|wake\s*up|start\s+(?:charting|listening|voice|exam)|resume\s+(?:charting|voice)|begin\s+(?:charting|exam)|start)\b/i;
-      const sleepRegex = /\b((?:hey|hi|ok)?\s*(?:sono\s*dent|sonodent|sono)?\s*(?:pause|sleep|standby|mute)|(?:sono\s*dent|sonodent|sono)\s*stop|stop\s+(?:charting|listening|voice|recording)|pause\s+(?:charting|voice|listening)|stop)\b/i;
+      const wakeRegex = /\b((?:hey|hi|hello|ok|okay)?\s*(?:sono\s*dent|sonodent|sono\s*dont|sono\s*den|sono|assistant)\s*(?:wake\s*up|wake|start|listen|resume|active)?|wake\s*up|start\s+(?:charting|listening|voice|exam)|resume\s+(?:charting|voice)|begin\s+(?:charting|exam))\b/i;
+      const sleepRegex = /\b((?:hey|hi|ok)?\s*(?:sono\s*dent|sonodent|sono)?\s*(?:pause|sleep|standby|mute)|(?:sono\s*dent|sonodent|sono)\s*stop|stop\s+(?:charting|listening|voice|recording)|pause\s+(?:charting|voice|listening)|sonodent\s+pause|sonodent\s+sleep)\b/i;
 
       // Handle Sleep / Standby commands
       if (sleepRegex.test(clean)) {
@@ -405,7 +405,7 @@
       }
 
       // Normalize undo / rollback variations
-      clean = clean.replace(/\b(scratch\s+that|scratch\s+it|un\s+do|and\s+do|an\s+do|unto|can\s+do|cancel\s+that)\b/g, "undo");
+      clean = clean.replace(/\b(scratch\s+that|scratch\s+it|un\s+do|and\s+do|an\s+do|unto|undu|can\s+do|cancel\s+that)\b/g, "undo");
 
       this.beginBatch();
 

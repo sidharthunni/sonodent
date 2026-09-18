@@ -399,8 +399,8 @@
       let clean = text.toLowerCase().trim();
 
       // 0. Hands-Free Operatory Wake-Word & Standby Gating (Phonetic Tolerant)
-      const wakeRegex = /\b((?:hey|hi|hello|ok|okay)?\s*(?:sono\s*dent|sonodent|sono\s*dont|sono\s*den|sono|assistant)\s*(?:wake\s*up|wake|start|listen|resume|active)?|wake\s*up|start\s+(?:charting|listening|voice|exam)|resume\s+(?:charting|voice)|begin\s+(?:charting|exam)|start)\b/i;
-      const sleepRegex = /\b((?:hey|hi|ok)?\s*(?:sono\s*dent|sonodent|sono)?\s*(?:pause|sleep|standby|mute)|(?:sono\s*dent|sonodent|sono)\s*stop|stop\s+(?:charting|listening|voice|recording)|pause\s+(?:charting|voice|listening)|stop)\b/i;
+      const wakeRegex = /\b((?:hey|hi|hello|ok|okay)?\s*(?:sono\s*dent|sonodent|sono\s*dont|sono\s*den|sono|assistant)\s*(?:wake\s*up|wake|start|listen|resume|active)?|wake\s*up|start\s+(?:charting|listening|voice|exam)|resume\s+(?:charting|voice)|begin\s+(?:charting|exam))\b/i;
+      const sleepRegex = /\b((?:hey|hi|ok)?\s*(?:sono\s*dent|sonodent|sono)?\s*(?:pause|sleep|standby|mute)|(?:sono\s*dent|sonodent|sono)\s*stop|stop\s+(?:charting|listening|voice|recording)|pause\s+(?:charting|voice|listening)|sonodent\s+pause|sonodent\s+sleep)\b/i;
 
       // Handle Sleep / Standby commands
       if (sleepRegex.test(clean)) {
@@ -422,7 +422,7 @@
       }
 
       // Normalize undo / rollback variations
-      clean = clean.replace(/\b(scratch\s+that|scratch\s+it|un\s+do|and\s+do|an\s+do|unto|can\s+do|cancel\s+that)\b/g, "undo");
+      clean = clean.replace(/\b(scratch\s+that|scratch\s+it|un\s+do|and\s+do|an\s+do|unto|undu|can\s+do|cancel\s+that)\b/g, "undo");
 
       this.beginBatch();
 
@@ -2806,9 +2806,24 @@
         });
       }
 
-      // Voice Engine
+      // Voice Engine & Hands-Free UI State Manager
       let recognition = null;
       let isRecording = false;
+
+      function updateVoiceIndicatorState(mode) {
+        const ind = document.getElementById('voice-indicator');
+        const txt = document.getElementById('voice-btn-text');
+        if (mode === 'standby') {
+          if (ind) ind.className = "w-2.5 h-2.5 rounded-full bg-amber-400 inline-block";
+          if (txt) txt.textContent = "Standby (Say 'Hey SonoDent')";
+        } else if (mode === 'active') {
+          if (ind) ind.className = "w-2.5 h-2.5 rounded-full bg-red-400 inline-block recording-pulse";
+          if (txt) txt.textContent = "Listening Hands-Free...";
+        } else {
+          if (ind) ind.className = "w-2.5 h-2.5 rounded-full bg-white inline-block";
+          if (txt) txt.textContent = "Start Hands-Free Voice";
+        }
+      }
 
       function tryAutoStartVoice() {
         if (isRecording) return;
@@ -2816,11 +2831,11 @@
           initVoiceRecognition();
           if (recognition) {
             isRecording = true;
-            engine.isStandby = true;
-            updateVoiceIndicatorState('standby');
+            engine.isStandby = false; // Active by default for immediate chairside dictation!
+            updateVoiceIndicatorState('active');
             recognition.start();
             initRealMicAudio();
-            document.getElementById('transcription-tape').textContent = 'STANDBY: Hands-free listening active. Say "Hey SonoDent" or "Start Charting"...';
+            document.getElementById('transcription-tape').textContent = 'MIC ACTIVE: Hands-free listening ready. Dictate e.g. "Tooth 14, 5, 4, 6, bleeding" (or say "SonoDent pause" for standby)...';
             console.log("Zero-touch auto-start successfully engaged on page load.");
           }
         } catch (e) {
@@ -3042,22 +3057,28 @@
 
         if (!isRecording) {
           isRecording = true;
+          engine.isStandby = false;
           initVoiceRecognition();
           try {
             if (recognition) recognition.start();
           } catch(e) {
             console.error(e);
           }
-          voiceIndicator.className = "w-2.5 h-2.5 rounded-full bg-red-400 inline-block recording-pulse";
-          voiceText.textContent = "Listening Hands-Free...";
-          document.getElementById('transcription-tape').textContent = "MIC ACTIVE: Ready for dictation (e.g. 'Tooth 14, 5, 4, 6')...";
+          updateVoiceIndicatorState('active');
+          document.getElementById('transcription-tape').textContent = "MIC ACTIVE: Ready for dictation (e.g. 'Tooth 14, 5, 4, 6, bleeding')...";
         } else {
+          if (engine.isStandby) {
+            // If in standby, clicking mic button wakes it to active charting immediately
+            engine.isStandby = false;
+            updateVoiceIndicatorState('active');
+            document.getElementById('transcription-tape').textContent = "MIC ACTIVE: Resumed from standby. Ready for dictation...";
+            return;
+          }
           isRecording = false;
           try {
             if (recognition) recognition.stop();
           } catch(e) {}
-          voiceIndicator.className = "w-2.5 h-2.5 rounded-full bg-white inline-block";
-          voiceText.textContent = "Start Hands-Free Voice";
+          updateVoiceIndicatorState('idle');
           document.getElementById('transcription-tape').textContent = "Voice paused. Click 'Start Hands-Free Voice' to dictate.";
         }
       });
