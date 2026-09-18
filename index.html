@@ -2251,8 +2251,8 @@
           const geo = new THREE.CylinderGeometry(0.85, 0.8, 1.45, 16);
           crownMesh = new THREE.Mesh(geo, crownMat);
         } else if (toothMeta.type === 'canine') {
-          // Pointed cuspid with prominent labial ridge
-          const geo = new THREE.ConeGeometry(0.85, 1.85, 16);
+          // Anatomical cuspid: tapered rounded crown with rounded incisal cusp
+          const geo = new THREE.CylinderGeometry(0.55, 0.88, 1.70, 16);
           crownMesh = new THREE.Mesh(geo, crownMat);
           if (isMaxilla) crownMesh.rotation.x = Math.PI;
         } else {
@@ -2266,24 +2266,27 @@
         crownMesh.receiveShadow = true;
         group.add(crownMesh);
 
-        // 2. Anatomical Roots
+        // 2. Anatomical Roots (Encapsulated subgingivally, exposed only during recession or X-Ray)
+        const rootMeshes = [];
         for (let r = 0; r < toothMeta.roots; r++) {
-          const rootGeo = new THREE.ConeGeometry(0.3, 2.2, 8);
+          const rootGeo = new THREE.ConeGeometry(0.28, 2.0, 8);
           const rootMesh = new THREE.Mesh(rootGeo, rootMat);
           const xOff = (r - (toothMeta.roots - 1) / 2) * 0.52;
           
           if (isMaxilla) {
-            rootMesh.position.set(xOff, 1.4, 0);
+            rootMesh.position.set(xOff, 1.3, 0);
           } else {
             rootMesh.rotation.x = Math.PI;
-            rootMesh.position.set(xOff, -1.4, 0);
+            rootMesh.position.set(xOff, -1.3, 0);
           }
+          rootMesh.visible = false; // Subgingival by default; revealed dynamically on recession or X-Ray
           group.add(rootMesh);
+          rootMeshes.push(rootMesh);
         }
 
-        // 3. Cervical Periodontal Pocket Ring Indicator
-        const ringGeo = new THREE.TorusGeometry(1.15, 0.08, 8, 24);
-        const ringMat = new THREE.MeshBasicMaterial({ color: 0x10b981, transparent: true, opacity: 0.9 });
+        // 3. Cervical Periodontal Pocket Ring Indicator (Subtle when healthy, prominent when diseased)
+        const ringGeo = new THREE.TorusGeometry(1.08, 0.045, 8, 24);
+        const ringMat = new THREE.MeshBasicMaterial({ color: 0x10b981, transparent: true, opacity: 0.35 });
         const ringMesh = new THREE.Mesh(ringGeo, ringMat);
         ringMesh.rotation.x = Math.PI / 2;
         ringMesh.position.y = 0;
@@ -2313,6 +2316,7 @@
         group.userData.ring = ringMesh;
         group.userData.bleed = bleedMesh;
         group.userData.sprite = sprite;
+        group.userData.roots = rootMeshes;
 
         return group;
       }
@@ -2689,11 +2693,24 @@
             ringColor = 0xf59e0b; // Amber Warning for Early Perio / Mobile
           }
           mesh.userData.ring.material.color.setHex(ringColor);
+          if (hasBleeding || maxD >= 5 || hasSuppuration || toothData.furcation > 0 || maxD === 4 || toothData.mobility > 0) {
+            mesh.userData.ring.material.opacity = 0.95;
+          } else {
+            mesh.userData.ring.material.opacity = 0.35;
+          }
 
           // Dynamic Gingival Recession & Pocket Displacement (Dramatic High-Visibility Shift)
           const isMaxilla = mesh.userData.isMaxilla;
           const recessionShift = Math.max(0, (maxD - 3) * 0.45) + (maxRec * 0.85);
           mesh.userData.ring.position.y = isMaxilla ? recessionShift : -recessionShift;
+
+          // Anatomical Root Exposure: roots are subgingival (hidden) unless recession > 0 or in X-Ray
+          const isRootExposed = (maxRec > 0) || isXRayMode;
+          if (mesh.userData.roots) {
+            mesh.userData.roots.forEach(rm => {
+              rm.visible = isRootExposed;
+            });
+          }
 
           // Enamel Color Highlight & Pathological Disease State
           if (!isXRayMode) {
@@ -2796,10 +2813,13 @@
               m.userData.crown.material.transparent = true;
               m.userData.crown.material.opacity = 0.38;
               m.userData.crown.material.color.setHex(0x38bdf8);
+              if (m.userData.roots) m.userData.roots.forEach(rm => rm.visible = true);
             } else {
               m.userData.crown.material.transparent = false;
               m.userData.crown.material.opacity = 1.0;
               m.userData.crown.material.color.setHex(0xffffff);
+              const maxR = engine.teeth[id] && engine.teeth[id].recession ? Math.max(...Object.values(engine.teeth[id].recession)) : 0;
+              if (m.userData.roots) m.userData.roots.forEach(rm => rm.visible = maxR > 0);
             }
           }
           update3DVisuals();
