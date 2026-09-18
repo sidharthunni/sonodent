@@ -1360,7 +1360,10 @@
           </div>
 
           <!-- Noise Gate Toggle, Voice Readback & Voice Undo -->
-          <div class="flex items-center space-x-2">
+          <div class="flex flex-wrap items-center gap-1.5">
+            <button id="btn-toggle-accent" class="px-2.5 py-1.5 rounded bg-slate-800 hover:bg-slate-700 border border-slate-700 text-[11px] text-cyan-300 transition font-medium" title="Switch between Indian English (en-IN) and US English (en-US)">
+              Accent: Indian (en-IN)
+            </button>
             <button id="btn-toggle-readback" class="px-2.5 py-1.5 rounded bg-slate-800 hover:bg-slate-700 border border-slate-700 text-[11px] text-cyan-300 transition font-medium">
               Audio Readback: ON
             </button>
@@ -1396,6 +1399,25 @@
           <div id="transcription-tape" class="text-sm sm:text-base md:text-[17px] font-mono font-bold text-white tracking-wide leading-relaxed min-h-[30px] flex items-center break-words selection:bg-cyan-600">
             MIC ACTIVE: Dictate e.g. "14 5 4 6 bleeding", "19 pus", or "30 recession 3"...
           </div>
+        </div>
+
+        <!-- Direct Chairside Quick-Voice Chips & Input (Zero-Failure Demo Support) -->
+        <div class="mt-2.5 pt-2 border-t border-slate-800/60 flex flex-wrap items-center gap-1.5 text-xs font-mono">
+          <span class="text-cyan-400 text-[10px] uppercase font-bold mr-1">Quick Dictate:</span>
+          <button class="btn-quick-voice px-2 py-1 rounded bg-slate-900 hover:bg-slate-800 border border-slate-800 hover:border-red-500/60 text-red-300 font-medium transition cursor-pointer" data-cmd="14 bleeding">"14 bleeding"</button>
+          <button class="btn-quick-voice px-2 py-1 rounded bg-slate-900 hover:bg-slate-800 border border-slate-800 hover:border-yellow-500/60 text-yellow-300 font-medium transition cursor-pointer" data-cmd="19 pus">"19 pus"</button>
+          <button class="btn-quick-voice px-2 py-1 rounded bg-slate-900 hover:bg-slate-800 border border-slate-800 hover:border-orange-500/60 text-orange-300 font-medium transition cursor-pointer" data-cmd="30 recession 3">"30 recession 3"</button>
+          <button class="btn-quick-voice px-2 py-1 rounded bg-slate-900 hover:bg-slate-800 border border-slate-800 hover:border-amber-500/60 text-amber-300 font-medium transition cursor-pointer" data-cmd="8 mobility 2">"8 mobility 2"</button>
+          <button class="btn-quick-voice px-2 py-1 rounded bg-slate-900 hover:bg-slate-800 border border-slate-800 hover:border-purple-500/60 text-purple-300 font-medium transition cursor-pointer" data-cmd="15 furcation 2">"15 furcation 2"</button>
+          <button class="btn-quick-voice px-2 py-1 rounded bg-slate-900 hover:bg-slate-800 border border-slate-800 hover:border-red-700/60 text-slate-300 font-medium transition cursor-pointer" data-cmd="1 missing">"1 missing"</button>
+          <button class="btn-quick-voice px-2 py-1 rounded bg-slate-900 hover:bg-slate-800 border border-slate-800 hover:border-cyan-500/60 text-cyan-300 font-medium transition cursor-pointer" data-cmd="19 implant">"19 implant"</button>
+          <button class="btn-quick-voice px-2 py-1 rounded bg-slate-900 hover:bg-slate-800 border border-slate-800 hover:border-emerald-500/60 text-emerald-300 font-medium transition cursor-pointer" data-cmd="3 2 2 2">"3 2 2 2"</button>
+          <button class="btn-quick-voice px-2 py-1 rounded bg-slate-900 hover:bg-slate-800 border border-slate-800 hover:border-amber-500/60 text-amber-400 font-medium transition cursor-pointer" data-cmd="undo">"undo"</button>
+        </div>
+
+        <div class="mt-2 flex items-center gap-2">
+          <input id="input-custom-cmd" type="text" placeholder="Type or simulate voice command (e.g. '14 5 4 6 bleeding', '30 recession 3')..." class="flex-1 bg-slate-950 border border-slate-800 focus:border-cyan-500 rounded-lg px-3 py-1.5 text-xs font-mono text-white placeholder-slate-500 focus:outline-none transition">
+          <button id="btn-exec-cmd" class="px-3 py-1.5 rounded-lg bg-cyan-950 hover:bg-cyan-900 border border-cyan-700 text-cyan-300 font-medium text-xs font-mono transition cursor-pointer">Execute</button>
         </div>
 
         <!-- ONE-CLICK DEMO BUTTONS FOR JUDGES -->
@@ -2938,6 +2960,139 @@
         }
       }
 
+      // Active Speech Recognition Language Locale (Default Indian English for DSOLVE 2026)
+      let currentSpeechLocale = 'en-IN';
+      let isSpeechRecognizing = false;
+      let interimDebounceTimer = null;
+
+      // Master Pipeline to Execute Spoken Command (Used by mic, chips, and text bar)
+      function executeSpokenCommand(transcript, isSimulated = false) {
+        if (!transcript || typeof transcript !== 'string') return;
+        const clean = transcript.trim();
+        if (!clean) return;
+
+        const chip = document.getElementById('tape-status-chip');
+        if (chip) {
+          chip.textContent = "Processing";
+          chip.className = "px-2 py-0.5 rounded bg-cyan-950 border border-cyan-700 text-cyan-300 font-semibold animate-pulse";
+        }
+
+        const tParser0 = performance.now();
+        const actions = engine.parseVoiceTranscript(clean);
+        const parserLatency = performance.now() - tParser0;
+
+        const sleepAction = actions.find(a => a.type === 'system_sleep');
+        const wakeAction = actions.find(a => a.type === 'system_wake');
+        const standbyIgnored = actions.find(a => a.type === 'standby_ignored');
+
+        if (sleepAction) {
+          updateVoiceIndicatorState('standby');
+          speakConfirmation("SonoDent in standby");
+          document.getElementById('transcription-tape').textContent = 'STANDBY ENGAGED: Periodontal charting paused. Ambient speech ignored. Say "Hey SonoDent" to resume.';
+          if (chip) { chip.textContent = "Standby"; chip.className = "px-2 py-0.5 rounded bg-amber-950 border border-amber-700 text-amber-300 font-semibold"; }
+          return;
+        }
+
+        if (standbyIgnored) {
+          document.getElementById('transcription-tape').textContent = `[STANDBY (ROOM TALK IGNORED)]: "${standbyIgnored.transcript}" (Say "Hey SonoDent" to wake)`;
+          if (chip) { chip.textContent = "Ignored"; chip.className = "px-2 py-0.5 rounded bg-slate-900 border border-slate-800 text-slate-400 font-semibold"; }
+          return;
+        }
+
+        if (wakeAction) {
+          updateVoiceIndicatorState('active');
+          speakConfirmation("SonoDent listening");
+          if (actions.length === 1) {
+            document.getElementById('transcription-tape').textContent = 'WAKE CONFIRMED: SonoDent active. Ready for dictation (e.g. "14 bleeding").';
+            if (chip) { chip.textContent = "Active"; chip.className = "px-2 py-0.5 rounded bg-emerald-950 border border-emerald-700 text-emerald-300 font-semibold"; }
+            return;
+          }
+        }
+
+        if (actions.length > 0) {
+          updateActiveToothHUD();
+          update2DChart();
+          updateDiagnostics();
+          update3DVisuals();
+          if (engine.activeToothId) {
+            focusCameraOnTooth(engine.activeToothId);
+          }
+
+          const measurements = actions.filter(a => a.type === 'measurement');
+          const condition = actions.find(a => a.type === 'condition');
+          const rollback = actions.find(a => a.type === 'rollback');
+          const toothSelect = actions.find(a => a.type === 'select_tooth');
+          const recession = actions.find(a => a.type === 'recession');
+          const mobility = actions.find(a => a.type === 'mobility');
+          const furcation = actions.find(a => a.type === 'furcation');
+          const missing = actions.find(a => a.type === 'missing');
+          const implant = actions.find(a => a.type === 'implant');
+          const lexiconFinding = actions.find(a => a.type === 'lexicon_finding');
+
+          if (rollback) {
+            const undone = rollback.item;
+            const tId = undone ? (undone.initialTooth || (undone.entries && undone.entries[0] && undone.entries[0].toothId) || "") : "";
+            const count = undone && undone.entries ? undone.entries.length : 1;
+            document.getElementById('transcription-tape').textContent = `ROLLBACK: Restored ${count} measurement(s) on Tooth #${tId}`;
+            speakConfirmation("Entry undone");
+            if (chip) { chip.textContent = "Rollback"; chip.className = "px-2 py-0.5 rounded bg-amber-950 border border-amber-700 text-amber-300 font-semibold"; }
+          } else if (measurements.length > 0) {
+            const toothId = measurements[0].toothId;
+            const depths = measurements.map(m => m.depth).join(", ");
+            const condText = condition ? `, ${condition.condition} noted` : "";
+            document.getElementById('transcription-tape').textContent = `CHARTED: Tooth #${toothId} [${depths}]${condText}`;
+            if (measurements.length === 1) {
+              speakConfirmation(`Tooth ${toothId}, ${measurements[0].depth} millimeters${condText}`);
+            } else {
+              speakConfirmation(`Tooth ${toothId}, ${depths}${condText}`);
+            }
+            if (chip) { chip.textContent = "Charted"; chip.className = "px-2 py-0.5 rounded bg-emerald-950 border border-emerald-700 text-emerald-300 font-semibold"; }
+          } else if (condition) {
+            document.getElementById('transcription-tape').textContent = `CHARTED: ${condition.condition.toUpperCase()} noted on Tooth #${condition.toothId}`;
+            speakConfirmation(`${condition.condition} noted on tooth ${condition.toothId}`);
+            if (chip) { chip.textContent = "Condition"; chip.className = "px-2 py-0.5 rounded bg-red-950 border border-red-700 text-red-300 font-semibold"; }
+          } else if (recession) {
+            document.getElementById('transcription-tape').textContent = `CHARTED: Tooth #${recession.toothId} recession ${recession.value}mm (root exposed)`;
+            speakConfirmation(`Tooth ${recession.toothId}, recession ${recession.value} millimeters`);
+            if (chip) { chip.textContent = "Recession"; chip.className = "px-2 py-0.5 rounded bg-orange-950 border border-orange-700 text-orange-300 font-semibold"; }
+          } else if (mobility) {
+            document.getElementById('transcription-tape').textContent = `CHARTED: Tooth #${mobility.toothId} Grade ${mobility.value} mobility (loose)`;
+            speakConfirmation(`Tooth ${mobility.toothId}, mobility grade ${mobility.value}`);
+            if (chip) { chip.textContent = "Mobility"; chip.className = "px-2 py-0.5 rounded bg-yellow-950 border border-yellow-700 text-yellow-300 font-semibold"; }
+          } else if (furcation) {
+            document.getElementById('transcription-tape').textContent = `CHARTED: Tooth #${furcation.toothId} Class ${furcation.value} furcation defect`;
+            speakConfirmation(`Tooth ${furcation.toothId}, furcation class ${furcation.value}`);
+            if (chip) { chip.textContent = "Furcation"; chip.className = "px-2 py-0.5 rounded bg-purple-950 border border-purple-700 text-purple-300 font-semibold"; }
+          } else if (missing) {
+            document.getElementById('transcription-tape').textContent = `CHARTED: Tooth #${missing.toothId} marked missing (empty socket)`;
+            speakConfirmation(`Tooth ${missing.toothId} marked missing`);
+            if (chip) { chip.textContent = "Missing"; chip.className = "px-2 py-0.5 rounded bg-slate-900 border border-red-800 text-red-400 font-semibold"; }
+          } else if (implant) {
+            document.getElementById('transcription-tape').textContent = `CHARTED: Tooth #${implant.toothId} marked titanium implant fixture`;
+            speakConfirmation(`Tooth ${implant.toothId} marked implant`);
+            if (chip) { chip.textContent = "Implant"; chip.className = "px-2 py-0.5 rounded bg-cyan-950 border border-cyan-700 text-cyan-300 font-semibold"; }
+          } else if (lexiconFinding) {
+            const t = lexiconFinding.termData;
+            document.getElementById('transcription-tape').innerHTML = `<span class="text-amber-400 font-bold">[${t.category.toUpperCase()}] ${t.term}</span> <span class="text-cyan-300 font-mono">(${t.code})</span> on Tooth #${lexiconFinding.toothId}: ${t.meaning}`;
+            speakConfirmation(`${t.term} noted on tooth ${lexiconFinding.toothId}`);
+            if (chip) { chip.textContent = "Finding"; chip.className = "px-2 py-0.5 rounded bg-indigo-950 border border-indigo-700 text-indigo-300 font-semibold"; }
+          } else if (toothSelect) {
+            document.getElementById('transcription-tape').textContent = `FOCUSED: Tooth #${toothSelect.toothId} active for dictation`;
+            speakConfirmation(`Tooth ${toothSelect.toothId} selected`);
+            if (chip) { chip.textContent = "Focused"; chip.className = "px-2 py-0.5 rounded bg-cyan-950 border border-cyan-700 text-cyan-300 font-semibold"; }
+          }
+        } else {
+          document.getElementById('transcription-tape').textContent = `HEARD: "${clean}" (No clinical dental action matched)`;
+          if (chip) { chip.textContent = "Heard"; chip.className = "px-2 py-0.5 rounded bg-slate-900 border border-slate-800 text-slate-300 font-semibold"; }
+        }
+
+        const latElem = document.getElementById('telemetry-latency');
+        if (latElem) {
+          const dispLat = parserLatency < 0.1 ? parserLatency.toFixed(3) : parserLatency.toFixed(2);
+          latElem.textContent = `${dispLat}ms`;
+        }
+      }
+
       function initVoiceRecognition() {
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
         if (!SpeechRecognition) return;
@@ -2950,171 +3105,82 @@
         recognition = new SpeechRecognition();
         recognition.continuous = true;
         recognition.interimResults = true;
-        // Align with user system locale (en-IN for India, or system default)
-        recognition.lang = (navigator.language && navigator.language.startsWith('en')) ? navigator.language : 'en-IN';
+        recognition.lang = currentSpeechLocale;
         recognition.maxAlternatives = 3;
 
-        // Apply Dental Lexicon Grammar Biasing to Web Speech API
-        const SpeechGrammarList = window.SpeechGrammarList || window.webkitSpeechGrammarList;
-        if (SpeechGrammarList && window.SonoDentEngine && window.SonoDentEngine.getGrammarVocabulary) {
-          try {
-            const grammarList = new SpeechGrammarList();
-            const vocab = window.SonoDentEngine.getGrammarVocabulary();
-            const grammarStr = '#JSGF V1.0; grammar dental; public <term> = ' + vocab.join(' | ') + ' ;';
-            grammarList.addFromString(grammarStr, 1.0);
-            recognition.grammars = grammarList;
-          } catch(e) {}
-        }
-
         let restartTimer = null;
-        function scheduleRestart(delay = 150) {
+        function scheduleRestart(delay = 250) {
           if (!isRecording) return;
           if (restartTimer) clearTimeout(restartTimer);
           restartTimer = setTimeout(() => {
-            if (!isRecording) return;
+            if (!isRecording || isSpeechRecognizing) return;
             try {
               recognition.start();
             } catch(e) {
-              try {
-                initVoiceRecognition();
-                if (isRecording && recognition) recognition.start();
-              } catch(err) {}
+              // Ignore already-started errors gracefully
             }
           }, delay);
         }
 
+        recognition.onstart = () => {
+          isSpeechRecognizing = true;
+          const chip = document.getElementById('tape-status-chip');
+          if (chip) { chip.textContent = "Listening"; chip.className = "px-2 py-0.5 rounded bg-emerald-950 border border-emerald-700 text-emerald-300 font-semibold"; }
+        };
+
         recognition.onaudiostart = () => {
-          if (isRecording) {
-            const tape = document.getElementById('transcription-tape');
-            if (tape && tape.textContent.startsWith("Listening")) {
-              tape.textContent = "MIC ACTIVE: Ready for dictation (e.g. 'Tooth 14, 5, 4, 6')...";
-            }
-          }
+          const chip = document.getElementById('tape-status-chip');
+          if (chip) { chip.textContent = "Audio In"; chip.className = "px-2 py-0.5 rounded bg-cyan-950 border border-cyan-700 text-cyan-300 font-semibold"; }
+        };
+
+        recognition.onspeechstart = () => {
+          const chip = document.getElementById('tape-status-chip');
+          if (chip) { chip.textContent = "Speech Detected"; chip.className = "px-2 py-0.5 rounded bg-cyan-950 border border-cyan-500 text-cyan-200 font-bold animate-pulse"; }
         };
 
         recognition.onresult = (event) => {
           let interimTranscript = '';
+          let finalTranscript = '';
+
           for (let i = event.resultIndex; i < event.results.length; ++i) {
             const transcript = event.results[i][0].transcript;
             if (event.results[i].isFinal) {
-              document.getElementById('transcription-tape').textContent = `HEARD: "${transcript.trim()}"`;
-              const tParser0 = performance.now();
-              const actions = engine.parseVoiceTranscript(transcript);
-              const parserLatency = performance.now() - tParser0;
-
-              const sleepAction = actions.find(a => a.type === 'system_sleep');
-              const wakeAction = actions.find(a => a.type === 'system_wake');
-              const standbyIgnored = actions.find(a => a.type === 'standby_ignored');
-
-              if (sleepAction) {
-                updateVoiceIndicatorState('standby');
-                speakConfirmation("SonoDent in standby");
-                document.getElementById('transcription-tape').textContent = 'STANDBY ENGAGED: Periodontal charting paused. Ambient speech ignored. Say "Hey SonoDent" to resume.';
-                return;
-              }
-
-              if (standbyIgnored) {
-                document.getElementById('transcription-tape').textContent = `[STANDBY (ROOM TALK IGNORED)]: "${standbyIgnored.transcript}" (Say "Hey SonoDent" to wake)`;
-                return;
-              }
-
-              if (wakeAction) {
-                updateVoiceIndicatorState('active');
-                speakConfirmation("SonoDent listening");
-                if (actions.length === 1) {
-                  document.getElementById('transcription-tape').textContent = 'WAKE CONFIRMED: SonoDent active. Ready for dictation (e.g. "Tooth 14, 5, 4, 6").';
-                  return;
-                }
-              }
-
-              if (actions.length > 0) {
-                updateActiveToothHUD();
-                update2DChart();
-                updateDiagnostics();
-                update3DVisuals();
-                if (engine.activeToothId) {
-                  focusCameraOnTooth(engine.activeToothId);
-                }
-
-                // Spoken confirmation to hygienist
-                const measurements = actions.filter(a => a.type === 'measurement');
-                const condition = actions.find(a => a.type === 'condition');
-                const rollback = actions.find(a => a.type === 'rollback');
-                const toothSelect = actions.find(a => a.type === 'select_tooth');
-                const recession = actions.find(a => a.type === 'recession');
-                const mobility = actions.find(a => a.type === 'mobility');
-                const furcation = actions.find(a => a.type === 'furcation');
-                const missing = actions.find(a => a.type === 'missing');
-                const implant = actions.find(a => a.type === 'implant');
-                const lexiconFinding = actions.find(a => a.type === 'lexicon_finding');
-
-                if (rollback) {
-                  const undone = rollback.item;
-                  const tId = undone ? (undone.initialTooth || (undone.entries && undone.entries[0] && undone.entries[0].toothId) || "") : "";
-                  const count = undone && undone.entries ? undone.entries.length : 1;
-                  document.getElementById('transcription-tape').textContent = `ROLLBACK: Restored ${count} measurement(s) on Tooth #${tId}`;
-                  speakConfirmation("Entry undone");
-                } else if (measurements.length > 0) {
-                  const toothId = measurements[0].toothId;
-                  const depths = measurements.map(m => m.depth).join(", ");
-                  const condText = condition ? `, ${condition.condition} noted` : "";
-                  if (measurements.length === 1) {
-                    speakConfirmation(`Tooth ${toothId}, ${measurements[0].depth} millimeters${condText}`);
-                  } else {
-                    speakConfirmation(`Tooth ${toothId}, ${depths}${condText}`);
-                  }
-                } else if (condition) {
-                  speakConfirmation(`${condition.condition} noted on tooth ${condition.toothId}`);
-                } else if (recession) {
-                  speakConfirmation(`Tooth ${recession.toothId}, recession ${recession.value} millimeters`);
-                } else if (mobility) {
-                  speakConfirmation(`Tooth ${mobility.toothId}, mobility grade ${mobility.value}`);
-                } else if (furcation) {
-                  speakConfirmation(`Tooth ${furcation.toothId}, furcation class ${furcation.value}`);
-                } else if (missing) {
-                  speakConfirmation(`Tooth ${missing.toothId} marked missing`);
-                } else if (implant) {
-                  speakConfirmation(`Tooth ${implant.toothId} marked implant`);
-                } else if (lexiconFinding) {
-                  const t = lexiconFinding.termData;
-                  document.getElementById('transcription-tape').innerHTML = `<span class="text-amber-400 font-bold">[${t.category.toUpperCase()}] ${t.term}</span> <span class="text-cyan-300 font-mono">(${t.code})</span> on Tooth #${lexiconFinding.toothId}: ${t.meaning}`;
-                  speakConfirmation(`${t.term} noted on tooth ${lexiconFinding.toothId}`);
-                } else if (toothSelect) {
-                  speakConfirmation(`Tooth ${toothSelect.toothId} selected`);
-                }
-              }
-              const latElem = document.getElementById('telemetry-latency');
-              if (latElem) {
-                const dispLat = parserLatency < 0.1 ? parserLatency.toFixed(3) : parserLatency.toFixed(2);
-                latElem.textContent = `${dispLat}ms`;
-              }
+              finalTranscript += transcript + ' ';
             } else {
               interimTranscript += transcript;
             }
           }
-          if (interimTranscript) {
-            document.getElementById('transcription-tape').textContent = `STREAM: "${interimTranscript.trim()}"`;
+
+          if (finalTranscript.trim()) {
+            if (interimDebounceTimer) clearTimeout(interimDebounceTimer);
+            executeSpokenCommand(finalTranscript.trim());
+          } else if (interimTranscript.trim()) {
+            document.getElementById('transcription-tape').textContent = `HEARING: "${interimTranscript.trim()}..."`;
+            // Auto-commit on 850ms speech pause if browser doesn't send isFinal
+            if (interimDebounceTimer) clearTimeout(interimDebounceTimer);
+            interimDebounceTimer = setTimeout(() => {
+              if (interimTranscript.trim()) {
+                executeSpokenCommand(interimTranscript.trim());
+              }
+            }, 850);
           }
         };
 
         recognition.onerror = (event) => {
-          console.warn("Speech Recognition Error:", event.error);
           if (event.error === 'not-allowed' || event.error === 'service-not-allowed') {
             isRecording = false;
-            const ind = document.getElementById('voice-indicator');
-            const txt = document.getElementById('voice-btn-text');
-            if (ind) ind.className = "w-2.5 h-2.5 rounded-full bg-white inline-block";
-            if (txt) txt.textContent = "Start Hands-Free Voice";
-            document.getElementById('transcription-tape').textContent = "Microphone permission denied. Please allow microphone access in your browser.";
+            updateVoiceIndicatorState('idle');
+            document.getElementById('transcription-tape').textContent = "Microphone permission denied. Click 'Start Hands-Free Voice' and allow mic access.";
           } else if (event.error === 'no-speech' || event.error === 'aborted' || event.error === 'network') {
-            // Reconnect quietly on pauses
-            scheduleRestart(200);
+            isSpeechRecognizing = false;
+            scheduleRestart(300);
           }
         };
 
         recognition.onend = () => {
+          isSpeechRecognizing = false;
           if (isRecording) {
-            scheduleRestart(150);
+            scheduleRestart(250);
           }
         };
       }
@@ -3213,6 +3279,61 @@
           update3DVisuals();
         }
       });
+
+      // Accent Switcher (Indian English vs US English)
+      const btnAccent = document.getElementById('btn-toggle-accent');
+      if (btnAccent) {
+        btnAccent.addEventListener('click', () => {
+          if (currentSpeechLocale === 'en-IN') {
+            currentSpeechLocale = 'en-US';
+            btnAccent.textContent = "Accent: US (en-US)";
+            btnAccent.classList.remove('text-cyan-300');
+            btnAccent.classList.add('text-indigo-300');
+          } else {
+            currentSpeechLocale = 'en-IN';
+            btnAccent.textContent = "Accent: Indian (en-IN)";
+            btnAccent.classList.remove('text-indigo-300');
+            btnAccent.classList.add('text-cyan-300');
+          }
+          if (isRecording) {
+            initVoiceRecognition();
+            try { recognition.start(); } catch(e) {}
+          }
+          document.getElementById('transcription-tape').textContent = `SPEECH LOCALE SET: ${currentSpeechLocale} (Ready for dictation)`;
+        });
+      }
+
+      // Chairside Quick-Voice Chips
+      document.querySelectorAll('.btn-quick-voice').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const cmd = btn.getAttribute('data-cmd');
+          if (cmd) {
+            executeSpokenCommand(cmd, true);
+          }
+        });
+      });
+
+      // Direct Command Execution Input Bar
+      const inputCustom = document.getElementById('input-custom-cmd');
+      const btnExecCustom = document.getElementById('btn-exec-cmd');
+      if (inputCustom && btnExecCustom) {
+        btnExecCustom.addEventListener('click', () => {
+          const val = inputCustom.value.trim();
+          if (val) {
+            executeSpokenCommand(val, true);
+            inputCustom.value = '';
+          }
+        });
+        inputCustom.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter') {
+            const val = inputCustom.value.trim();
+            if (val) {
+              executeSpokenCommand(val, true);
+              inputCustom.value = '';
+            }
+          }
+        });
+      }
 
       // Auto-Arm Voice on First User Gesture Anywhere on Screen
       let hasUserInteracted = false;
