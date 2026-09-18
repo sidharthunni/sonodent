@@ -146,7 +146,13 @@
       this.historyStack = [];
       this.currentBatch = null;
       this.numberingSystem = "universal"; // "universal" or "fdi"
+      this.isStandby = false; // Acoustic Wake-Word & Standby Mode
       this.initChart();
+    }
+
+    setStandby(val) {
+      this.isStandby = Boolean(val);
+      return this.isStandby;
     }
 
     initChart() {
@@ -374,6 +380,29 @@
     parseVoiceTranscript(text) {
       if (!text || typeof text !== "string") return [];
       let clean = text.toLowerCase().trim();
+
+      // 0. Hands-Free Operatory Wake-Word & Standby Gating
+      const wakeRegex = /\b(hey\s+sonodent|hi\s+sonodent|hello\s+sonodent|sonodent\s+wake\s+up|wake\s+up\s+sonodent|wake\s+up|sonodent\s+start|start\s+charting|start\s+listening|sonodent\s+listen|sonodent\s+resume|resume\s+charting|resume\s+voice|sonodent\s+active)\b/i;
+      const sleepRegex = /\b(hey\s+sonodent\s+pause|sonodent\s+pause|pause\s+charting|pause\s+voice|pause\s+listening|sonodent\s+sleep|go\s+to\s+sleep\s+sonodent|sonodent\s+stop|stop\s+charting|stop\s+listening|sonodent\s+standby|standby\s+sonodent|sleep\s+sonodent|mute\s+sonodent)\b/i;
+
+      // Handle Sleep / Standby commands
+      if (sleepRegex.test(clean)) {
+        this.isStandby = true;
+        return [{ type: "system_sleep", trigger: clean, message: "SonoDent standby mode engaged." }];
+      }
+
+      // Handle Wake commands
+      const hasWake = wakeRegex.test(clean);
+      if (hasWake) {
+        this.isStandby = false;
+        clean = clean.replace(wakeRegex, "").trim();
+        if (!clean) {
+          return [{ type: "system_wake", message: "SonoDent active. Listening for periodontal commands." }];
+        }
+      } else if (this.isStandby) {
+        // In standby mode and no wake word detected -> Ignore ambient operatory speech
+        return [{ type: "standby_ignored", transcript: text.trim() }];
+      }
 
       // Normalize undo / rollback variations
       clean = clean.replace(/\b(scratch\s+that|scratch\s+it|un\s+do|and\s+do|an\s+do|unto|can\s+do|cancel\s+that)\b/g, "undo");
@@ -667,6 +696,9 @@
         });
       }
 
+      if (hasWake) {
+        actions.unshift({ type: "system_wake", message: "SonoDent active. Listening for periodontal commands." });
+      }
       this.commitBatch();
       return actions;
     }
@@ -882,6 +914,14 @@
       for (let d = 1; d <= 15; d++) {
         vocab.add(String(d));
       }
+      // Operatory Wake, Sleep, and Workflow Trigger Phrases
+      [
+        "hey sonodent", "hi sonodent", "hello sonodent", "sonodent wake up", "wake up",
+        "sonodent start", "start charting", "start listening", "sonodent listen",
+        "sonodent resume", "resume charting", "sonodent pause", "pause charting",
+        "pause listening", "sonodent sleep", "sonodent stop", "stop charting",
+        "stop listening", "sonodent standby", "standby", "scratch that", "undo"
+      ].forEach(cmd => vocab.add(cmd));
       return Array.from(vocab);
     }
 

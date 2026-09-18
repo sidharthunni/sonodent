@@ -163,7 +163,13 @@
       this.historyStack = [];
       this.currentBatch = null;
       this.numberingSystem = "universal"; // "universal" or "fdi"
+      this.isStandby = false; // Acoustic Wake-Word & Standby Mode
       this.initChart();
+    }
+
+    setStandby(val) {
+      this.isStandby = Boolean(val);
+      return this.isStandby;
     }
 
     initChart() {
@@ -391,6 +397,29 @@
     parseVoiceTranscript(text) {
       if (!text || typeof text !== "string") return [];
       let clean = text.toLowerCase().trim();
+
+      // 0. Hands-Free Operatory Wake-Word & Standby Gating
+      const wakeRegex = /\b(hey\s+sonodent|hi\s+sonodent|hello\s+sonodent|sonodent\s+wake\s+up|wake\s+up\s+sonodent|wake\s+up|sonodent\s+start|start\s+charting|start\s+listening|sonodent\s+listen|sonodent\s+resume|resume\s+charting|resume\s+voice|sonodent\s+active)\b/i;
+      const sleepRegex = /\b(hey\s+sonodent\s+pause|sonodent\s+pause|pause\s+charting|pause\s+voice|pause\s+listening|sonodent\s+sleep|go\s+to\s+sleep\s+sonodent|sonodent\s+stop|stop\s+charting|stop\s+listening|sonodent\s+standby|standby\s+sonodent|sleep\s+sonodent|mute\s+sonodent)\b/i;
+
+      // Handle Sleep / Standby commands
+      if (sleepRegex.test(clean)) {
+        this.isStandby = true;
+        return [{ type: "system_sleep", trigger: clean, message: "SonoDent standby mode engaged." }];
+      }
+
+      // Handle Wake commands
+      const hasWake = wakeRegex.test(clean);
+      if (hasWake) {
+        this.isStandby = false;
+        clean = clean.replace(wakeRegex, "").trim();
+        if (!clean) {
+          return [{ type: "system_wake", message: "SonoDent active. Listening for periodontal commands." }];
+        }
+      } else if (this.isStandby) {
+        // In standby mode and no wake word detected -> Ignore ambient operatory speech
+        return [{ type: "standby_ignored", transcript: text.trim() }];
+      }
 
       // Normalize undo / rollback variations
       clean = clean.replace(/\b(scratch\s+that|scratch\s+it|un\s+do|and\s+do|an\s+do|unto|can\s+do|cancel\s+that)\b/g, "undo");
@@ -684,6 +713,9 @@
         });
       }
 
+      if (hasWake) {
+        actions.unshift({ type: "system_wake", message: "SonoDent active. Listening for periodontal commands." });
+      }
       this.commitBatch();
       return actions;
     }
@@ -899,6 +931,14 @@
       for (let d = 1; d <= 15; d++) {
         vocab.add(String(d));
       }
+      // Operatory Wake, Sleep, and Workflow Trigger Phrases
+      [
+        "hey sonodent", "hi sonodent", "hello sonodent", "sonodent wake up", "wake up",
+        "sonodent start", "start charting", "start listening", "sonodent listen",
+        "sonodent resume", "resume charting", "sonodent pause", "pause charting",
+        "pause listening", "sonodent sleep", "sonodent stop", "stop charting",
+        "stop listening", "sonodent standby", "standby", "scratch that", "undo"
+      ].forEach(cmd => vocab.add(cmd));
       return Array.from(vocab);
     }
 
@@ -1247,6 +1287,9 @@
           </button>
           <button id="demo-rollback" class="px-2 py-1 rounded bg-amber-950/70 hover:bg-amber-900 border border-amber-800/70 text-amber-300 transition">
             Voice Error &amp; Instant Rollback
+          </button>
+          <button id="demo-standby" class="px-2 py-1 rounded bg-indigo-950/70 hover:bg-indigo-900 border border-indigo-800/70 text-indigo-300 font-medium transition" title="Simulate voice standby pause and wake-word resume">
+            Demo: Standby &amp; Wake Word
           </button>
           <button id="demo-reset" class="px-2 py-1 rounded bg-slate-800/90 hover:bg-slate-700 border border-slate-700 text-slate-400 transition ml-auto">
             Reset Chart
@@ -2622,6 +2665,32 @@
               const t0 = performance.now();
               document.getElementById('transcription-tape').textContent = `HEARD: "${transcript.trim()}"`;
               const actions = engine.parseVoiceTranscript(transcript);
+
+              const sleepAction = actions.find(a => a.type === 'system_sleep');
+              const wakeAction = actions.find(a => a.type === 'system_wake');
+              const standbyIgnored = actions.find(a => a.type === 'standby_ignored');
+
+              if (sleepAction) {
+                updateVoiceIndicatorState('standby');
+                speakConfirmation("SonoDent in standby");
+                document.getElementById('transcription-tape').textContent = 'STANDBY ENGAGED: Periodontal charting paused. Ambient speech ignored. Say "Hey SonoDent" to resume.';
+                return;
+              }
+
+              if (standbyIgnored) {
+                document.getElementById('transcription-tape').textContent = `[STANDBY (ROOM TALK IGNORED)]: "${standbyIgnored.transcript}" (Say "Hey SonoDent" to wake)`;
+                return;
+              }
+
+              if (wakeAction) {
+                updateVoiceIndicatorState('active');
+                speakConfirmation("SonoDent listening");
+                if (actions.length === 1) {
+                  document.getElementById('transcription-tape').textContent = 'WAKE CONFIRMED: SonoDent active. Ready for dictation (e.g. "Tooth 14, 5, 4, 6").';
+                  return;
+                }
+              }
+
               if (actions.length > 0) {
                 updateActiveToothHUD();
                 update2DChart();
@@ -2888,6 +2957,38 @@
           update3DVisuals();
         }, 1100);
       });
+
+      const demoStandbyBtn = document.getElementById('demo-standby');
+      if (demoStandbyBtn) {
+        demoStandbyBtn.addEventListener('click', () => {
+          document.getElementById('transcription-tape').textContent = 'VOICE: "SonoDent, pause"';
+          const a1 = engine.parseVoiceTranscript("sonodent pause");
+          updateVoiceIndicatorState('standby');
+          speakConfirmation("SonoDent in standby");
+          document.getElementById('transcription-tape').textContent = 'STANDBY ENGAGED: Charting paused. Ambient speech ignored. Say "Hey SonoDent" to resume.';
+
+          setTimeout(() => {
+            document.getElementById('transcription-tape').textContent = 'VOICE (ROOM TALK): "Dr. Smith, please check room three"';
+            const a2 = engine.parseVoiceTranscript("Dr. Smith, please check room three");
+            const ignored = a2.find(a => a.type === 'standby_ignored');
+            if (ignored) {
+              document.getElementById('transcription-tape').textContent = '[STANDBY (ROOM TALK IGNORED)]: "Dr. Smith, please check room three" (Say "Hey SonoDent" to wake)';
+            }
+
+            setTimeout(() => {
+              document.getElementById('transcription-tape').textContent = 'VOICE: "Hey SonoDent, tooth 14, 5, 4, 6, bleeding"';
+              const a3 = engine.parseVoiceTranscript("hey sonodent tooth 14 5 4 6 bleeding");
+              updateVoiceIndicatorState('active');
+              speakConfirmation("SonoDent listening. Tooth 14, 5, 4, 6, bleeding noted.");
+              document.getElementById('transcription-tape').textContent = 'WAKE CONFIRMED & CHARTED: Tooth 14 (MB:5, B:4, DB:6 with bleeding)';
+              updateActiveToothHUD();
+              update2DChart();
+              updateDiagnostics();
+              update3DVisuals();
+            }, 2400);
+          }, 2000);
+        });
+      }
 
       document.getElementById('demo-reset').addEventListener('click', () => {
         engine.initChart();
