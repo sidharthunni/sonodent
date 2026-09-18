@@ -554,12 +554,25 @@
           }
         }
 
-        // Implicit tooth selection (e.g. "14 5 4 6", "14 546", "19 6 5 6")
-        // Rule 1: A number between 10 and 32 followed immediately by a pocket depth (1..9)
+        // Implicit tooth selection WITHOUT requiring the word "tooth"
+        // Handles "14 bleeding", "19 pus", "30 recession 3", "8 mobility 2", "15 furcation 2", "1 missing", "19 implant", "14 5 4 6"
+        const conditionKeywords = ["bleeding", "blood", "bleed", "bop", "positive", "pus", "suppuration", "suppurating", "exudate", "recession", "recess", "mobility", "mobile", "furcation", "furca", "missing", "extracted", "absent", "implant", "fixture", "pocket", "deep", "healthy"];
         const possibleTooth = parseInt(tok, 10);
-        if (!isNaN(possibleTooth) && possibleTooth >= 10 && possibleTooth <= 32 && i + 1 < tokens.length) {
-          const nextVal = this.parseSpokenNumber(tokens[i + 1]);
-          if (nextVal !== null && nextVal >= 1 && nextVal <= 9) {
+        if (!isNaN(possibleTooth) && possibleTooth >= 1 && possibleTooth <= 32 && i + 1 < tokens.length) {
+          const nextTok = tokens[i + 1];
+          const nextVal = this.parseSpokenNumber(nextTok);
+
+          // Case 1: Tooth 1..32 directly followed by any clinical condition keyword
+          if (conditionKeywords.includes(nextTok)) {
+            this.selectTooth(possibleTooth);
+            actions.push({ type: "select_tooth", toothId: this.activeToothId });
+            lastMeasuredSite = null;
+            i++;
+            continue;
+          }
+
+          // Case 2: Tooth 10..32 directly followed by a single-digit depth 1..9 (e.g. "14 5 4 6")
+          if (possibleTooth >= 10 && nextVal !== null && nextVal >= 1 && nextVal <= 9) {
             this.selectTooth(possibleTooth);
             actions.push({ type: "select_tooth", toothId: this.activeToothId });
             lastMeasuredSite = null;
@@ -2492,12 +2505,16 @@
             if (toothData.suppuration[s] && treatmentHealingFactor < 40) hasSuppuration = true;
           });
 
-          // Cervical Pocket Ring Color (Crimson for Disease/Bleeding, Amber for Early Perio, Green for Healthy)
+          // Cervical Pocket Ring Color
           let ringColor = 0x10b981; // Healthy Green
           if (hasBleeding || maxD >= 5) {
             ringColor = 0xef4444; // Crimson Red for Active Bleeding or Deep Pocket >=5mm
+          } else if (toothData.furcation > 0) {
+            ringColor = 0xa855f7; // Purple Warning for Furcation Defect
+          } else if (toothData.implant) {
+            ringColor = 0x06b6d4; // Cyan for Titanium Dental Implant
           } else if (maxD === 4 || toothData.mobility > 0) {
-            ringColor = 0xf59e0b; // Amber Warning
+            ringColor = 0xf59e0b; // Amber Warning for Early Perio / Mobile
           }
           mesh.userData.ring.material.color.setHex(ringColor);
 
@@ -2512,6 +2529,12 @@
               // Active Bleeding on Probing: Vibrant Blood Crimson Warning
               mesh.userData.crown.material.emissive.setHex(0xdc2626);
               mesh.userData.crown.material.emissiveIntensity = 0.65;
+            } else if (toothData.implant) {
+              // Titanium Dental Implant Fixture: Gleaming Metallic Silver Sheen
+              mesh.userData.crown.material.emissive.setHex(0x64748b);
+              mesh.userData.crown.material.emissiveIntensity = 0.40;
+              mesh.userData.crown.material.metalness = 0.85;
+              mesh.userData.crown.material.roughness = 0.25;
             } else if (maxD >= 5) {
               // Severe Periodontal Pocket (>=5mm): Deep Pathological Red
               mesh.userData.crown.material.emissive.setHex(0x991b1b);
@@ -2532,6 +2555,8 @@
               // Healthy Intact Enamel: Subtle Pearlescent Tone
               mesh.userData.crown.material.emissive.setHex(0x080f1e);
               mesh.userData.crown.material.emissiveIntensity = 0.05;
+              mesh.userData.crown.material.metalness = 0.1;
+              mesh.userData.crown.material.roughness = 0.3;
             }
           }
 

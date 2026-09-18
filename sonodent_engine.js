@@ -537,12 +537,25 @@
           }
         }
 
-        // Implicit tooth selection (e.g. "14 5 4 6", "14 546", "19 6 5 6")
-        // Rule 1: A number between 10 and 32 followed immediately by a pocket depth (1..9)
+        // Implicit tooth selection WITHOUT requiring the word "tooth"
+        // Handles "14 bleeding", "19 pus", "30 recession 3", "8 mobility 2", "15 furcation 2", "1 missing", "19 implant", "14 5 4 6"
+        const conditionKeywords = ["bleeding", "blood", "bleed", "bop", "positive", "pus", "suppuration", "suppurating", "exudate", "recession", "recess", "mobility", "mobile", "furcation", "furca", "missing", "extracted", "absent", "implant", "fixture", "pocket", "deep", "healthy"];
         const possibleTooth = parseInt(tok, 10);
-        if (!isNaN(possibleTooth) && possibleTooth >= 10 && possibleTooth <= 32 && i + 1 < tokens.length) {
-          const nextVal = this.parseSpokenNumber(tokens[i + 1]);
-          if (nextVal !== null && nextVal >= 1 && nextVal <= 9) {
+        if (!isNaN(possibleTooth) && possibleTooth >= 1 && possibleTooth <= 32 && i + 1 < tokens.length) {
+          const nextTok = tokens[i + 1];
+          const nextVal = this.parseSpokenNumber(nextTok);
+
+          // Case 1: Tooth 1..32 directly followed by any clinical condition keyword
+          if (conditionKeywords.includes(nextTok)) {
+            this.selectTooth(possibleTooth);
+            actions.push({ type: "select_tooth", toothId: this.activeToothId });
+            lastMeasuredSite = null;
+            i++;
+            continue;
+          }
+
+          // Case 2: Tooth 10..32 directly followed by a single-digit depth 1..9 (e.g. "14 5 4 6")
+          if (possibleTooth >= 10 && nextVal !== null && nextVal >= 1 && nextVal <= 9) {
             this.selectTooth(possibleTooth);
             actions.push({ type: "select_tooth", toothId: this.activeToothId });
             lastMeasuredSite = null;
