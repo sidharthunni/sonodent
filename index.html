@@ -2328,8 +2328,8 @@
           const toothIndex = i / 2;
           const pos = getArchPosition(Math.min(15, toothIndex), isMaxilla);
           
-          // Alveolar ridge outer border
-          pointsOuter.push(new THREE.Vector3(pos.x * 1.15, gumDir * 3.6, pos.z * 1.05));
+          // Alveolar ridge outer border (Extended to 4.5 to fully encapsulate anatomical root apices)
+          pointsOuter.push(new THREE.Vector3(pos.x * 1.18, gumDir * 4.5, pos.z * 1.08));
 
           // Gingival margin: scallops down/up at teeth, peaks at interdental papillae between teeth
           const isInterdental = (i % 2 !== 0);
