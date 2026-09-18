@@ -378,6 +378,9 @@
     }
 
     parseVoiceTranscript(text) {
+      if (typeof performance !== "undefined" && performance.mark) {
+        performance.mark("sonodent-parse-start");
+      }
       if (!text || typeof text !== "string") return [];
       let clean = text.toLowerCase().trim();
 
@@ -700,6 +703,12 @@
         actions.unshift({ type: "system_wake", message: "SonoDent active. Listening for periodontal commands." });
       }
       this.commitBatch();
+      if (typeof performance !== "undefined" && performance.mark) {
+        performance.mark("sonodent-parse-end");
+        try {
+          performance.measure("SonoDent Core Parse", "sonodent-parse-start", "sonodent-parse-end");
+        } catch(e) {}
+      }
       return actions;
     }
 
