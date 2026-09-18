@@ -151,6 +151,86 @@
       return true;
     }
 
+    setMobility(toothId, grade) {
+      if (!this.teeth[toothId]) return false;
+      const t = this.teeth[toothId];
+      const entry = {
+        toothId,
+        prevMobility: t.mobility
+      };
+      if (this.currentBatch) {
+        this.currentBatch.entries.push(entry);
+      } else {
+        this.historyStack.push({
+          initialTooth: this.activeToothId,
+          initialSite: this.activeSiteIndex,
+          entries: [entry]
+        });
+      }
+      t.mobility = Math.max(0, Math.min(3, parseInt(grade, 10) || 0));
+      return true;
+    }
+
+    setFurcation(toothId, cls) {
+      if (!this.teeth[toothId]) return false;
+      const t = this.teeth[toothId];
+      const entry = {
+        toothId,
+        prevFurcation: t.furcation
+      };
+      if (this.currentBatch) {
+        this.currentBatch.entries.push(entry);
+      } else {
+        this.historyStack.push({
+          initialTooth: this.activeToothId,
+          initialSite: this.activeSiteIndex,
+          entries: [entry]
+        });
+      }
+      t.furcation = Math.max(0, Math.min(4, parseInt(cls, 10) || 0));
+      return true;
+    }
+
+    setMissing(toothId, isMissing = true) {
+      if (!this.teeth[toothId]) return false;
+      const t = this.teeth[toothId];
+      const entry = {
+        toothId,
+        prevMissing: t.missing
+      };
+      if (this.currentBatch) {
+        this.currentBatch.entries.push(entry);
+      } else {
+        this.historyStack.push({
+          initialTooth: this.activeToothId,
+          initialSite: this.activeSiteIndex,
+          entries: [entry]
+        });
+      }
+      t.missing = !!isMissing;
+      return true;
+    }
+
+    setImplant(toothId, isImplant = true) {
+      if (!this.teeth[toothId]) return false;
+      const t = this.teeth[toothId];
+      const entry = {
+        toothId,
+        prevImplant: t.implant
+      };
+      if (this.currentBatch) {
+        this.currentBatch.entries.push(entry);
+      } else {
+        this.historyStack.push({
+          initialTooth: this.activeToothId,
+          initialSite: this.activeSiteIndex,
+          entries: [entry]
+        });
+      }
+      t.implant = !!isImplant;
+      return true;
+    }
+
     rollbackLast() {
       if (this.historyStack.length === 0) return null;
       const batch = this.historyStack.pop();
@@ -161,10 +241,14 @@
         const entry = entries[i];
         const t = this.teeth[entry.toothId];
         if (t) {
-          t.probing[entry.site] = entry.prevProbing;
-          t.bleeding[entry.site] = entry.prevBleeding;
-          t.suppuration[entry.site] = entry.prevSuppuration;
-          t.recession[entry.site] = entry.prevRecession;
+          if (entry.prevProbing !== undefined) t.probing[entry.site] = entry.prevProbing;
+          if (entry.prevBleeding !== undefined) t.bleeding[entry.site] = entry.prevBleeding;
+          if (entry.prevSuppuration !== undefined) t.suppuration[entry.site] = entry.prevSuppuration;
+          if (entry.prevRecession !== undefined) t.recession[entry.site] = entry.prevRecession;
+          if (entry.prevMobility !== undefined) t.mobility = entry.prevMobility;
+          if (entry.prevFurcation !== undefined) t.furcation = entry.prevFurcation;
+          if (entry.prevMissing !== undefined) t.missing = entry.prevMissing;
+          if (entry.prevImplant !== undefined) t.implant = entry.prevImplant;
         }
       }
 
@@ -380,17 +464,101 @@
           continue;
         }
 
-        if (tok === "bleeding" || tok === "blood" || tok === "bleed" || tok === "bop") {
+        if (tok === "next") {
+          this.activeToothId = this.activeToothId < 32 ? this.activeToothId + 1 : 1;
+          this.activeSiteIndex = 0;
+          actions.push({ type: "select_tooth", toothId: this.activeToothId });
+          lastMeasuredSite = null;
+          i++;
+          continue;
+        }
+        if (tok === "previous" || tok === "prev") {
+          this.activeToothId = this.activeToothId > 1 ? this.activeToothId - 1 : 32;
+          this.activeSiteIndex = 0;
+          actions.push({ type: "select_tooth", toothId: this.activeToothId });
+          lastMeasuredSite = null;
+          i++;
+          continue;
+        }
+
+        if (tok === "bleeding" || tok === "blood" || tok === "bleed" || tok === "bop" || tok === "positive") {
           const targetSite = lastMeasuredSite || SITES[this.activeSiteIndex];
           this.setMeasurement(this.activeToothId, targetSite, null, true);
           actions.push({ type: "condition", toothId: this.activeToothId, site: targetSite, condition: "bleeding" });
           i++;
           continue;
         }
-        if (tok === "pus" || tok === "suppuration") {
+        if (tok === "pus" || tok === "suppuration" || tok === "suppurating" || tok === "exudate") {
           const targetSite = lastMeasuredSite || SITES[this.activeSiteIndex];
           this.setMeasurement(this.activeToothId, targetSite, null, null, true);
           actions.push({ type: "condition", toothId: this.activeToothId, site: targetSite, condition: "suppuration" });
+          i++;
+          continue;
+        }
+        if (tok === "recession" || tok === "recess") {
+          let recVal = 1;
+          if (i + 1 < tokens.length) {
+            const parsed = this.parseSpokenNumber(tokens[i + 1]);
+            if (parsed !== null && parsed >= 0 && parsed <= 15) {
+              recVal = parsed;
+              i++;
+            }
+          }
+          const targetSite = lastMeasuredSite || SITES[this.activeSiteIndex];
+          this.setMeasurement(this.activeToothId, targetSite, null, null, null, recVal);
+          actions.push({ type: "recession", toothId: this.activeToothId, site: targetSite, value: recVal });
+          i++;
+          continue;
+        }
+        if (tok === "mobility" || tok === "mobile") {
+          let grade = 1;
+          if (i + 1 < tokens.length) {
+            let nextIdx = i + 1;
+            if (tokens[nextIdx] === "grade" || tokens[nextIdx] === "class") {
+              nextIdx++;
+            }
+            if (nextIdx < tokens.length) {
+              const parsed = this.parseSpokenNumber(tokens[nextIdx]);
+              if (parsed !== null && parsed >= 0 && parsed <= 3) {
+                grade = parsed;
+                i = nextIdx;
+              }
+            }
+          }
+          this.setMobility(this.activeToothId, grade);
+          actions.push({ type: "mobility", toothId: this.activeToothId, value: grade });
+          i++;
+          continue;
+        }
+        if (tok === "furcation" || tok === "furca" || tok === "fork") {
+          let cls = 1;
+          if (i + 1 < tokens.length) {
+            let nextIdx = i + 1;
+            if (tokens[nextIdx] === "class" || tokens[nextIdx] === "grade") {
+              nextIdx++;
+            }
+            if (nextIdx < tokens.length) {
+              const parsed = this.parseSpokenNumber(tokens[nextIdx]);
+              if (parsed !== null && parsed >= 1 && parsed <= 4) {
+                cls = parsed;
+                i = nextIdx;
+              }
+            }
+          }
+          this.setFurcation(this.activeToothId, cls);
+          actions.push({ type: "furcation", toothId: this.activeToothId, value: cls });
+          i++;
+          continue;
+        }
+        if (tok === "missing" || tok === "extracted" || tok === "absent") {
+          this.setMissing(this.activeToothId, true);
+          actions.push({ type: "missing", toothId: this.activeToothId });
+          i++;
+          continue;
+        }
+        if (tok === "implant" || tok === "fixture") {
+          this.setImplant(this.activeToothId, true);
+          actions.push({ type: "implant", toothId: this.activeToothId });
           i++;
           continue;
         }
