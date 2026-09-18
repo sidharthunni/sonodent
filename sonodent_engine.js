@@ -56,6 +56,8 @@
     ML: "Mesiolingual",
     L:  "Mid-Lingual / Palatal",
     DL: "Distolingual"
+  };
+
   // Comprehensive Standard Dental Clinical Lexicon Database
   // Cross-indexed with SNOMED-CT, ADA CDT, LOINC, and ICD-10-CM standards
   const DENTAL_LEXICON_DATABASE = [

@@ -2159,7 +2159,8 @@
 
         lexiconContainer.innerHTML = '';
         if (lexiconStatus) {
-          lexiconStatus.textContent = `Showing ${terms.length} of ${window.DENTAL_LEXICON_DATABASE.length} standard terms in category '${activeLexiconCategory}'`;
+          const totalTerms = (window.DENTAL_LEXICON_DATABASE || (SonoDentEngine.getDentalLexicon && SonoDentEngine.getDentalLexicon()) || []).length;
+          lexiconStatus.textContent = `Showing ${terms.length} of ${totalTerms} standard terms in category '${activeLexiconCategory}'`;
         }
 
         if (terms.length === 0) {
