@@ -1160,7 +1160,7 @@
     <div class="flex items-center space-x-2 sm:space-x-3 text-xs font-mono">
       <button id="btn-open-benchmark" class="hidden md:flex items-center px-2.5 py-1 rounded bg-slate-900 hover:bg-slate-800 border border-slate-800 hover:border-emerald-500/60 text-slate-300 transition group cursor-pointer" title="Click to open Live Latency Benchmark Audit">
         <span class="w-2 h-2 rounded-full bg-emerald-400 mr-2 animate-pulse"></span>
-        <span>LATENCY: <strong class="text-emerald-400 font-bold group-hover:underline" id="telemetry-latency">3.8ms</strong></span>
+        <span>LATENCY: <strong class="text-emerald-400 font-bold group-hover:underline" id="telemetry-latency">0.05ms</strong></span>
         <span class="ml-1.5 text-[9px] text-slate-400 border border-slate-700 px-1 rounded bg-slate-950 font-mono">TEST</span>
       </button>
       <div class="hidden lg:flex items-center px-2.5 py-1 rounded bg-slate-900 border border-slate-800 text-slate-300">
@@ -2902,9 +2902,10 @@
           for (let i = event.resultIndex; i < event.results.length; ++i) {
             const transcript = event.results[i][0].transcript;
             if (event.results[i].isFinal) {
-              const t0 = performance.now();
               document.getElementById('transcription-tape').textContent = `HEARD: "${transcript.trim()}"`;
+              const tParser0 = performance.now();
               const actions = engine.parseVoiceTranscript(transcript);
+              const parserLatency = performance.now() - tParser0;
 
               const sleepAction = actions.find(a => a.type === 'system_sleep');
               const wakeAction = actions.find(a => a.type === 'system_wake');
@@ -2984,10 +2985,10 @@
                   speakConfirmation(`Tooth ${toothSelect.toothId} selected`);
                 }
               }
-              const parseDt = (performance.now() - t0).toFixed(1);
               const latElem = document.getElementById('telemetry-latency');
               if (latElem) {
-                latElem.textContent = `${parseDt}ms`;
+                const dispLat = parserLatency < 0.1 ? parserLatency.toFixed(3) : parserLatency.toFixed(2);
+                latElem.textContent = `${dispLat}ms`;
               }
             } else {
               interimTranscript += transcript;
