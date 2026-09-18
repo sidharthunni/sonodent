@@ -1204,6 +1204,11 @@
       <button id="btn-insurance-modal" class="px-3 py-1.5 rounded bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 font-medium text-white shadow shadow-blue-950 transition text-xs flex items-center space-x-1.5">
         <span>CDT Claim Dossier</span>
       </button>
+      <button id="btn-fullscreen-toggle" class="px-2.5 py-1.5 rounded bg-slate-800 hover:bg-slate-700 border border-slate-700 font-medium text-slate-200 hover:text-white text-xs transition flex items-center space-x-1.5" title="Maximize Screen / Fullscreen (Press F)">
+        <svg id="fs-icon-enter" class="w-3.5 h-3.5 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"></path></svg>
+        <svg id="fs-icon-exit" class="w-3.5 h-3.5 text-cyan-400 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4l5 5m0 0H5m4 0V5m11 11l-5-5m0 0h4m-4 0v4M4 20l5-5m0 0H5m4 0v4m11-11l-5 5m0 0h4m-4 0V5"></path></svg>
+        <span id="fs-btn-text">Maximize</span>
+      </button>
     </div>
   </header>
 
@@ -1211,7 +1216,7 @@
   <main class="flex-1 grid grid-cols-1 lg:grid-cols-12 gap-0 overflow-hidden">
 
     <!-- LEFT PANE: 3D ANATOMICAL DENTAL TWIN & VOICE CONTROLS (Cols 1-7) -->
-    <section class="lg:col-span-7 flex flex-col border-b lg:border-b-0 lg:border-r border-slate-800 relative bg-[#030610]">
+    <section id="pane-left-3d" class="lg:col-span-7 flex flex-col border-b lg:border-b-0 lg:border-r border-slate-800 relative bg-[#030610] transition-all duration-300">
       
       <!-- 3D Canvas Viewport -->
       <div class="relative w-full h-[460px] sm:h-[530px] lg:h-full min-h-[460px] flex-1">
@@ -1239,6 +1244,9 @@
           </button>
           <button id="btn-toggle-labels" class="px-2.5 py-1 rounded bg-slate-900/90 backdrop-blur border border-slate-700 hover:border-slate-500 text-[11px] text-slate-300 transition">
             Labels: ON
+          </button>
+          <button id="btn-toggle-theater" class="px-2.5 py-1 rounded bg-slate-900/90 backdrop-blur border border-slate-700 hover:border-cyan-500 text-[11px] text-cyan-300 transition font-medium" title="Expand 3D View to Full Width (Press M)">
+            3D Theater
           </button>
         </div>
 
@@ -1397,7 +1405,7 @@
     </section>
 
     <!-- RIGHT PANE: CLINICAL TELEMETRY, 2D PERIO CHART & CDT CODING (Cols 8-12) -->
-    <section class="lg:col-span-5 flex flex-col bg-[#050813] overflow-y-auto max-h-[85vh] lg:max-h-full">
+    <section id="pane-right-chart" class="lg:col-span-5 flex flex-col bg-[#050813] overflow-y-auto max-h-[85vh] lg:max-h-full transition-all duration-300">
       
       <!-- CLINICAL DIAGNOSTIC CLASSIFICATION (AAP / EFP 2018 WORLD WORKSHOP) -->
       <div class="p-4 border-b border-slate-800 bg-slate-900/40">
@@ -3168,6 +3176,91 @@
       }
       document.addEventListener('pointerdown', autoArmVoiceOnInteraction);
 
+            // Fullscreen / Maximize Screen Controller
+      const btnFullscreen = document.getElementById('btn-fullscreen-toggle');
+      const fsIconEnter = document.getElementById('fs-icon-enter');
+      const fsIconExit = document.getElementById('fs-icon-exit');
+      const fsBtnText = document.getElementById('fs-btn-text');
+
+      function toggleFullscreen() {
+        if (!document.fullscreenElement) {
+          if (document.documentElement.requestFullscreen) {
+            document.documentElement.requestFullscreen().catch(err => {
+              console.warn("Fullscreen request error:", err);
+            });
+          }
+        } else {
+          if (document.exitFullscreen) {
+            document.exitFullscreen();
+          }
+        }
+      }
+
+      function updateFullscreenUI() {
+        const isFS = Boolean(document.fullscreenElement);
+        if (fsIconEnter && fsIconExit && fsBtnText) {
+          if (isFS) {
+            fsIconEnter.classList.add('hidden');
+            fsIconExit.classList.remove('hidden');
+            fsBtnText.textContent = "Exit Fullscreen";
+          } else {
+            fsIconEnter.classList.remove('hidden');
+            fsIconExit.classList.add('hidden');
+            fsBtnText.textContent = "Maximize";
+          }
+        }
+        setTimeout(() => {
+          if (typeof onWindowResize === 'function') onWindowResize();
+        }, 150);
+      }
+
+      if (btnFullscreen) {
+        btnFullscreen.addEventListener('click', toggleFullscreen);
+      }
+      document.addEventListener('fullscreenchange', updateFullscreenUI);
+
+      // 3D Theater Full-Width Controller
+      const btnTheater = document.getElementById('btn-toggle-theater');
+      const leftPane = document.getElementById('pane-left-3d');
+      const rightPane = document.getElementById('pane-right-chart');
+      let isTheaterMode = false;
+
+      function toggleTheaterMode() {
+        isTheaterMode = !isTheaterMode;
+        if (isTheaterMode) {
+          if (leftPane) {
+            leftPane.classList.remove('lg:col-span-7');
+            leftPane.classList.add('lg:col-span-12');
+          }
+          if (rightPane) {
+            rightPane.classList.add('hidden');
+          }
+          if (btnTheater) {
+            btnTheater.textContent = "Split View";
+            btnTheater.classList.add('bg-cyan-950', 'text-cyan-300', 'border-cyan-500');
+          }
+        } else {
+          if (leftPane) {
+            leftPane.classList.remove('lg:col-span-12');
+            leftPane.classList.add('lg:col-span-7');
+          }
+          if (rightPane) {
+            rightPane.classList.remove('hidden');
+          }
+          if (btnTheater) {
+            btnTheater.textContent = "3D Theater";
+            btnTheater.classList.remove('bg-cyan-950', 'text-cyan-300', 'border-cyan-500');
+          }
+        }
+        setTimeout(() => {
+          if (typeof onWindowResize === 'function') onWindowResize();
+        }, 120);
+      }
+
+      if (btnTheater) {
+        btnTheater.addEventListener('click', toggleTheaterMode);
+      }
+
       // Presenter Hotkeys for Live Judging Sessions
       window.addEventListener('keydown', (e) => {
         if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
@@ -3193,6 +3286,12 @@
         } else if (e.key === 'l' || e.key === 'L') {
           e.preventDefault();
           openBenchmarkModal();
+        } else if (e.key === 'f' || e.key === 'F') {
+          e.preventDefault();
+          toggleFullscreen();
+        } else if (e.key === 'm' || e.key === 'M') {
+          e.preventDefault();
+          toggleTheaterMode();
         } else if (e.key === '0') {
           document.getElementById('demo-reset').click();
         }
