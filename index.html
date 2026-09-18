@@ -135,6 +135,9 @@
       <button id="btn-carestack-api" class="px-2.5 py-1.5 rounded bg-slate-800 hover:bg-slate-700 border border-slate-700 font-medium text-cyan-300 text-xs transition flex items-center space-x-1">
         <span>FHIR / JSON</span>
       </button>
+      <button id="btn-lexicon-modal" class="px-2.5 py-1.5 rounded bg-slate-800 hover:bg-slate-700 border border-slate-700 font-medium text-amber-300 text-xs transition flex items-center space-x-1" title="Explore Standard Clinical Dental Lexicon & Ontology">
+        <span>Clinical Lexicon</span>
+      </button>
       <button id="btn-insurance-modal" class="px-3 py-1.5 rounded bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 font-medium text-white shadow shadow-blue-950 transition text-xs flex items-center space-x-1.5">
         <span>CDT Claim Dossier</span>
       </button>
@@ -634,6 +637,52 @@
         <button id="btn-rerun-benchmark" class="px-4 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-medium text-xs transition">
           Run 100-Cycle Test Again
         </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- CLINICAL DENTAL LEXICON & ONTOLOGY DATABASE MODAL -->
+  <div id="modal-lexicon" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm hidden items-center justify-center p-4">
+    <div class="bg-slate-900 border border-slate-700 rounded-xl max-w-4xl w-full max-h-[90vh] flex flex-col shadow-2xl overflow-hidden">
+      <!-- Modal Header -->
+      <div class="px-6 py-4 border-b border-slate-800 flex items-center justify-between bg-slate-950">
+        <div>
+          <div class="flex items-center space-x-2">
+            <h3 class="font-bold text-base text-white">Standard Dental Clinical Lexicon &amp; Ontology</h3>
+            <span class="text-[10px] uppercase font-semibold px-2 py-0.5 rounded bg-amber-950 text-amber-300 border border-amber-700">SNOMED-CT / ADA CDT / LOINC</span>
+          </div>
+          <p class="text-xs text-slate-400 font-mono mt-0.5">Comprehensive Standard Vocabulary of Common Dental Examination &amp; Operatory Terms</p>
+        </div>
+        <button id="btn-close-lexicon-modal" class="text-slate-400 hover:text-white text-lg font-bold px-2 py-1">&times;</button>
+      </div>
+
+      <!-- Search & Category Filters -->
+      <div class="p-4 bg-slate-950 border-b border-slate-800 space-y-3">
+        <div class="relative">
+          <input type="text" id="lexicon-search-input" placeholder="Search standard terms, voice phrases, SNOMED codes, CDT numbers..." class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3.5 py-2 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-amber-500 font-mono" />
+        </div>
+        <div class="flex flex-wrap gap-1.5 text-[11px]" id="lexicon-cat-filters">
+          <button data-cat="All" class="lexicon-filter-pill px-2.5 py-1 rounded bg-amber-600 text-white font-medium transition">All (45+)</button>
+          <button data-cat="Periodontal" class="lexicon-filter-pill px-2.5 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 transition">Periodontal</button>
+          <button data-cat="Hard Tissue" class="lexicon-filter-pill px-2.5 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 transition">Hard Tissue / Caries</button>
+          <button data-cat="Restorative" class="lexicon-filter-pill px-2.5 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 transition">Restorative</button>
+          <button data-cat="Prosthetics" class="lexicon-filter-pill px-2.5 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 transition">Prosthetics</button>
+          <button data-cat="Endodontic" class="lexicon-filter-pill px-2.5 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 transition">Endodontic</button>
+          <button data-cat="Tooth Surfaces" class="lexicon-filter-pill px-2.5 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 transition">Surfaces</button>
+          <button data-cat="Occlusion" class="lexicon-filter-pill px-2.5 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 transition">Occlusion</button>
+          <button data-cat="Soft Tissue" class="lexicon-filter-pill px-2.5 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 transition">Soft Tissue</button>
+        </div>
+      </div>
+
+      <!-- Lexicon Entries Grid -->
+      <div class="p-6 overflow-y-auto flex-1 space-y-3" id="lexicon-entries-container">
+        <!-- Injected via JavaScript -->
+      </div>
+
+      <!-- Modal Footer -->
+      <div class="px-6 py-3 border-t border-slate-800 bg-slate-950 flex items-center justify-between text-xs font-mono">
+        <span class="text-slate-400" id="lexicon-status-bar">Showing 45 indexed clinical terms</span>
+        <span class="text-slate-500">Biased into Web Speech API Grammar Lattice</span>
       </div>
     </div>
   </div>
@@ -1588,6 +1637,18 @@
         recognition.lang = (navigator.language && navigator.language.startsWith('en')) ? navigator.language : 'en-IN';
         recognition.maxAlternatives = 3;
 
+        // Apply Dental Lexicon Grammar Biasing to Web Speech API
+        const SpeechGrammarList = window.SpeechGrammarList || window.webkitSpeechGrammarList;
+        if (SpeechGrammarList && window.SonoDentEngine && window.SonoDentEngine.getGrammarVocabulary) {
+          try {
+            const grammarList = new SpeechGrammarList();
+            const vocab = window.SonoDentEngine.getGrammarVocabulary();
+            const grammarStr = '#JSGF V1.0; grammar dental; public <term> = ' + vocab.join(' | ') + ' ;';
+            grammarList.addFromString(grammarStr, 1.0);
+            recognition.grammars = grammarList;
+          } catch(e) {}
+        }
+
         let restartTimer = null;
         function scheduleRestart(delay = 150) {
           if (!isRecording) return;
@@ -1638,6 +1699,7 @@
                 const furcation = actions.find(a => a.type === 'furcation');
                 const missing = actions.find(a => a.type === 'missing');
                 const implant = actions.find(a => a.type === 'implant');
+                const lexiconFinding = actions.find(a => a.type === 'lexicon_finding');
 
                 if (rollback) {
                   const undone = rollback.item;
@@ -1666,6 +1728,10 @@
                   speakConfirmation(`Tooth ${missing.toothId} marked missing`);
                 } else if (implant) {
                   speakConfirmation(`Tooth ${implant.toothId} marked implant`);
+                } else if (lexiconFinding) {
+                  const t = lexiconFinding.termData;
+                  document.getElementById('transcription-tape').innerHTML = `<span class="text-amber-400 font-bold">[${t.category.toUpperCase()}] ${t.term}</span> <span class="text-cyan-300 font-mono">(${t.code})</span> on Tooth #${lexiconFinding.toothId}: ${t.meaning}`;
+                  speakConfirmation(`${t.term} noted on tooth ${lexiconFinding.toothId}`);
                 } else if (toothSelect) {
                   speakConfirmation(`Tooth ${toothSelect.toothId} selected`);
                 }
@@ -2076,6 +2142,113 @@
       }
 
       window.runLatencyBenchmark = runLatencyBenchmark;
+
+      // Clinical Lexicon Modal Controller
+      const modalLexicon = document.getElementById('modal-lexicon');
+      const btnOpenLexicon = document.getElementById('btn-lexicon-modal');
+      const btnCloseLexicon = document.getElementById('btn-close-lexicon-modal');
+      const lexiconSearchInput = document.getElementById('lexicon-search-input');
+      const lexiconContainer = document.getElementById('lexicon-entries-container');
+      const lexiconStatus = document.getElementById('lexicon-status-bar');
+      let activeLexiconCategory = "All";
+
+      function renderLexiconEntries() {
+        if (!lexiconContainer) return;
+        const query = lexiconSearchInput ? lexiconSearchInput.value : "";
+        const terms = SonoDentEngine.searchLexicon(query, activeLexiconCategory);
+
+        lexiconContainer.innerHTML = '';
+        if (lexiconStatus) {
+          lexiconStatus.textContent = `Showing ${terms.length} of ${window.DENTAL_LEXICON_DATABASE.length} standard terms in category '${activeLexiconCategory}'`;
+        }
+
+        if (terms.length === 0) {
+          lexiconContainer.innerHTML = `
+            <div class="text-center py-8 text-slate-500 text-xs font-mono">
+              No dental terms matching "${query}". Try searching for 'caries', 'crown', 'furcation', 'buccal', or 'pulpitis'.
+            </div>
+          `;
+          return;
+        }
+
+        terms.forEach(t => {
+          const card = document.createElement('div');
+          card.className = "bg-slate-950 p-3.5 rounded-lg border border-slate-800 hover:border-amber-500/40 transition flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs font-mono";
+          
+          const triggersHtml = t.triggers.map(tr => `<span class="px-1.5 py-0.5 rounded bg-slate-900 border border-slate-800 text-[10px] text-slate-300 font-mono">"${tr}"</span>`).join(" ");
+
+          card.innerHTML = `
+            <div class="space-y-1 max-w-xl">
+              <div class="flex items-center space-x-2 flex-wrap gap-y-1">
+                <span class="font-bold text-white text-sm">${t.term}</span>
+                <span class="px-1.5 py-0.5 rounded bg-amber-950 text-amber-300 border border-amber-800 text-[9px] font-semibold">${t.category}</span>
+                <span class="px-1.5 py-0.5 rounded bg-slate-900 text-cyan-400 border border-slate-700 text-[9px] font-bold">${t.code}</span>
+              </div>
+              <p class="text-[11px] text-slate-400">${t.meaning}</p>
+              <div class="text-[10px] text-slate-500 pt-0.5 flex items-center flex-wrap gap-1">
+                <span class="text-slate-400 font-semibold">Voice Triggers:</span> ${triggersHtml}
+              </div>
+            </div>
+            <button class="px-2.5 py-1.5 rounded bg-slate-900 hover:bg-slate-800 border border-slate-700 hover:border-amber-400/60 text-amber-300 text-[10px] font-medium whitespace-nowrap transition cursor-pointer" data-sim-term="${t.triggers[0]}">
+              Simulate Voice
+            </button>
+          `;
+
+          const simBtn = card.querySelector('button[data-sim-term]');
+          if (simBtn) {
+            simBtn.addEventListener('click', () => {
+              const phrase = simBtn.getAttribute('data-sim-term');
+              modalLexicon.classList.add('hidden');
+              modalLexicon.classList.remove('flex');
+              document.getElementById('transcription-tape').textContent = `HEARD: "${phrase}"`;
+              const actions = engine.parseVoiceTranscript(phrase);
+              if (actions.length > 0) {
+                updateActiveToothHUD();
+                update2DChart();
+                updateDiagnostics();
+                update3DVisuals();
+                const finding = actions.find(a => a.type === 'lexicon_finding');
+                if (finding) {
+                  document.getElementById('transcription-tape').innerHTML = `<span class="text-amber-400 font-bold">[${finding.termData.category.toUpperCase()}] ${finding.termData.term}</span> <span class="text-cyan-300 font-mono">(${finding.termData.code})</span> on Tooth #${finding.toothId}: ${finding.termData.meaning}`;
+                  speakConfirmation(`${finding.termData.term} noted on tooth ${finding.toothId}`);
+                }
+              }
+            });
+          }
+
+          lexiconContainer.appendChild(card);
+        });
+      }
+
+      if (btnOpenLexicon) {
+        btnOpenLexicon.addEventListener('click', () => {
+          modalLexicon.classList.remove('hidden');
+          modalLexicon.classList.add('flex');
+          renderLexiconEntries();
+        });
+      }
+      if (btnCloseLexicon) {
+        btnCloseLexicon.addEventListener('click', () => {
+          modalLexicon.classList.add('hidden');
+          modalLexicon.classList.remove('flex');
+        });
+      }
+
+      if (lexiconSearchInput) {
+        lexiconSearchInput.addEventListener('input', renderLexiconEntries);
+      }
+
+      const catFilterPills = document.querySelectorAll('.lexicon-filter-pill');
+      catFilterPills.forEach(pill => {
+        pill.addEventListener('click', () => {
+          catFilterPills.forEach(p => {
+            p.className = "lexicon-filter-pill px-2.5 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 transition";
+          });
+          pill.className = "lexicon-filter-pill px-2.5 py-1 rounded bg-amber-600 text-white font-medium transition";
+          activeLexiconCategory = pill.getAttribute('data-cat');
+          renderLexiconEntries();
+        });
+      });
 
       document.getElementById('badge-system-select').addEventListener('click', () => {
         if (engine.numberingSystem === "universal") {

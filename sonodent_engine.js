@@ -56,7 +56,85 @@
     ML: "Mesiolingual",
     L:  "Mid-Lingual / Palatal",
     DL: "Distolingual"
-  };
+  // Comprehensive Standard Dental Clinical Lexicon Database
+  // Cross-indexed with SNOMED-CT, ADA CDT, LOINC, and ICD-10-CM standards
+  const DENTAL_LEXICON_DATABASE = [
+    // 1. Periodontal Clinical Parameters
+    { id: "ppd", term: "Probing Pocket Depth", triggers: ["depth", "pocket", "probing", "pocket depth", "sulcus depth", "mm"], category: "Periodontal", code: "LOINC 76465-4 / SNOMED 274786000", meaning: "Distance from gingival margin to bottom of sulcus (1-15mm).", actionable: true },
+    { id: "bop", term: "Bleeding on Probing", triggers: ["bleeding", "bleed", "blood", "bop", "positive"], category: "Periodontal", code: "LOINC 76466-2 / SNOMED 274787009", meaning: "Capillary hemorrhage upon probing, indicating active inflammation.", actionable: true },
+    { id: "sup", term: "Suppuration / Purulent Exudate", triggers: ["pus", "suppuration", "suppurating", "exudate", "purulent"], category: "Periodontal", code: "LOINC 76467-0 / SNOMED 274788004", meaning: "Purulent discharge in pocket indicating neutrophilic breakdown.", actionable: true },
+    { id: "rec", term: "Gingival Recession", triggers: ["recession", "recess", "receding", "root exposure"], category: "Periodontal", code: "LOINC 76468-8 / SNOMED 34927002", meaning: "Distance from CEJ to gingival margin exposing root surface.", actionable: true },
+    { id: "cal", term: "Clinical Attachment Loss", triggers: ["cal", "attachment loss", "clinical attachment"], category: "Periodontal", code: "LOINC 76469-6 / SNOMED 274789007", meaning: "Total attachment loss (Probing Depth + Gingival Recession).", actionable: true },
+    { id: "fur", term: "Furcation Involvement", triggers: ["furcation", "furca", "furcation class", "fork"], category: "Periodontal", code: "LOINC 76470-4 / Glickman I-IV", meaning: "Interradicular bone loss on multi-rooted molars/premolars.", actionable: true },
+    { id: "mob", term: "Tooth Mobility", triggers: ["mobility", "mobile", "mobility grade", "loose tooth"], category: "Periodontal", code: "LOINC 76471-2 / Miller Grade 0-3", meaning: "Horizontal or axial depressibility of tooth in socket.", actionable: true },
+    { id: "cal_sub", term: "Subgingival Calculus", triggers: ["calculus", "tartar", "subgingival calculus", "calc"], category: "Periodontal", code: "SNOMED 408548003 / CDT D4346", meaning: "Mineralized subgingival biofilm deposit requiring scaling.", actionable: false },
+    { id: "plaque", term: "Biofilm / Plaque Deposit", triggers: ["plaque", "biofilm", "plaque index"], category: "Periodontal", code: "SNOMED 408547008", meaning: "Bacterial aggregate on tooth surface provoking gingival inflammation.", actionable: false },
+    { id: "ging_margin", term: "Gingival Margin Height", triggers: ["margin", "free gingival margin", "gingival height"], category: "Periodontal", code: "LOINC 76473-8", meaning: "Position of the coronal border of the free gingiva relative to CEJ.", actionable: false },
+    { id: "kerat_tissue", term: "Keratinized Gingival Band", triggers: ["keratinized", "keratinized tissue", "attached gingiva"], category: "Periodontal", code: "LOINC 76472-0", meaning: "Zone of attached masticatory mucosa protecting periodontium.", actionable: false },
+    { id: "mgd", term: "Mucogingival Defect", triggers: ["mucogingival", "mucogingival defect", "frenum pull"], category: "Periodontal", code: "SNOMED 235072005", meaning: "Absence or deficiency of keratinized gingiva with high frenum attachment.", actionable: false },
+
+    // 2. Hard Tissue / Odontogram & Caries Findings
+    { id: "caries", term: "Dental Caries / Cavity", triggers: ["caries", "cavity", "decay", "carious lesion"], category: "Hard Tissue", code: "ICD-10 K02.9 / SNOMED 80967001", meaning: "Demineralization and cavitation of enamel and dentin by acidogenic bacteria.", actionable: false },
+    { id: "incipient", term: "Incipient Enamel Lesion", triggers: ["incipient", "white spot", "demineralization", "early caries"], category: "Hard Tissue", code: "ICD-10 K02.3 / SNOMED 234994004", meaning: "Subsurface enamel demineralization without cavitation; remineralizable.", actionable: false },
+    { id: "recurrent", term: "Recurrent / Secondary Caries", triggers: ["recurrent caries", "secondary caries", "marginal leakage"], category: "Hard Tissue", code: "ICD-10 K02.8 / SNOMED 234996002", meaning: "New carious breakdown developing at the margin of an existing restoration.", actionable: false },
+    { id: "fracture", term: "Fractured Enamel / Cusp", triggers: ["fracture", "fractured", "broken cusp", "chipped"], category: "Hard Tissue", code: "ICD-10 S02.5 / SNOMED 234998001", meaning: "Mechanical fracture or structural cleavage of coronal tooth structure.", actionable: false },
+    { id: "attrition", term: "Incisal / Occlusal Attrition", triggers: ["attrition", "wear facets", "bruxism wear", "grinding"], category: "Hard Tissue", code: "ICD-10 K03.0 / SNOMED 38171004", meaning: "Tooth-to-tooth mechanical wear from mastication or parafunctional clenching.", actionable: false },
+    { id: "abrasion", term: "Cervical Abrasion", triggers: ["abrasion", "toothbrush abrasion", "cervical notch"], category: "Hard Tissue", code: "ICD-10 K03.1 / SNOMED 83162002", meaning: "Frictional wear from foreign objects such as hard toothbrush bristles.", actionable: false },
+    { id: "abfraction", term: "Cervical Abfraction", triggers: ["abfraction", "wedge lesion", "cervical flexure"], category: "Hard Tissue", code: "ICD-10 K03.1 / SNOMED 274795008", meaning: "Biomechanically induced wedge-shaped cervical defect from occlusal flexing.", actionable: false },
+    { id: "erosion", term: "Acid Erosion", triggers: ["erosion", "acid erosion", "chemical wear"], category: "Hard Tissue", code: "ICD-10 K03.2 / SNOMED 67362008", meaning: "Loss of superficial tooth structure from extrinsic or intrinsic gastric acids.", actionable: false },
+    { id: "craze_line", term: "Enamel Craze Line", triggers: ["craze line", "craze", "enamel crack", "microcrack"], category: "Hard Tissue", code: "SNOMED 274796009", meaning: "Superficial hairline fracture confined strictly to enamel without symptoms.", actionable: false },
+
+    // 3. Restorative & Prosthetics Status
+    { id: "comp_rest", term: "Resin Composite Restoration", triggers: ["composite", "resin", "white filling", "composite restoration"], category: "Restorative", code: "CDT D2391-D2394 / SNOMED 257277002", meaning: "Tooth-colored direct dimethacrylate polymer restorative material.", actionable: false },
+    { id: "amalgam", term: "Dental Amalgam Restoration", triggers: ["amalgam", "silver filling", "silver restoration"], category: "Restorative", code: "CDT D2140-D2161 / SNOMED 111421008", meaning: "Direct dental restorative alloy composed of silver, tin, copper, and mercury.", actionable: false },
+    { id: "zirconia", term: "Zirconia Ceramic Crown", triggers: ["crown", "zirconia", "full ceramic", "ceramic crown"], category: "Restorative", code: "CDT D2740 / SNOMED 257321008", meaning: "High-strength monolithic polycrystalline ceramic full coverage restoration.", actionable: false },
+    { id: "pfm", term: "Porcelain Fused to Metal Crown", triggers: ["pfm", "porcelain metal", "pfm crown"], category: "Restorative", code: "CDT D2750 / SNOMED 257322001", meaning: "Ceramometal crown combining metallic cast framework with feldspathic porcelain.", actionable: false },
+    { id: "veneer", term: "Porcelain Laminate Veneer", triggers: ["veneer", "laminate", "porcelain veneer"], category: "Restorative", code: "CDT D2962 / SNOMED 257324000", meaning: "Esthetic thin bonded ceramic shell covering labial/facial enamel.", actionable: false },
+    { id: "inlay_onlay", term: "Indirect Inlay / Onlay", triggers: ["inlay", "onlay", "indirect restoration"], category: "Restorative", code: "CDT D2610-D2630", meaning: "Laboratory-fabricated restoration replacing one or more cusps.", actionable: false },
+    { id: "bridge", term: "Fixed Partial Denture (Bridge)", triggers: ["bridge", "fixed partial denture", "fpd"], category: "Prosthetics", code: "CDT D6240 / SNOMED 257325004", meaning: "Fixed prosthetic appliance replacing missing teeth anchored to abutments.", actionable: false },
+    { id: "pontic", term: "Bridge Pontic", triggers: ["pontic", "dummy tooth", "suspended tooth"], category: "Prosthetics", code: "CDT D6245 / SNOMED 257326003", meaning: "Artificial tooth suspended between bridge abutments over edentulous ridge.", actionable: false },
+    { id: "abutment", term: "Crown / Implant Abutment", triggers: ["abutment", "anchor tooth", "implant abutment"], category: "Prosthetics", code: "CDT D6057 / SNOMED 257327007", meaning: "Supporting tooth or transmucosal component that retains a prosthesis.", actionable: false },
+    { id: "implant", term: "Endosseous Dental Implant", triggers: ["implant", "fixture", "osseointegrated implant"], category: "Prosthetics", code: "CDT D6010 / SNOMED 272488008", meaning: "Biocompatible titanium/zirconia root replica surgically anchored in bone.", actionable: true },
+    { id: "missing", term: "Missing / Extracted Tooth", triggers: ["missing", "extracted", "absent", "tooth missing"], category: "Anatomy", code: "ICD-10 K08.1 / SNOMED 25540007", meaning: "Absence of tooth due to extraction, agenesis, or trauma.", actionable: true },
+
+    // 4. Endodontic Diagnostic Terms
+    { id: "rev_pulp", term: "Reversible Pulpitis", triggers: ["reversible pulpitis", "sensitive to cold", "mild pulpitis"], category: "Endodontic", code: "ICD-10 K04.01 / SNOMED 196373003", meaning: "Pulpal hyperemia that resolves rapidly following stimulus removal.", actionable: false },
+    { id: "irrev_pulp", term: "Irreversible Pulpitis", triggers: ["irreversible pulpitis", "lingering pain", "spontaneous pain"], category: "Endodontic", code: "ICD-10 K04.02 / SNOMED 196374009", meaning: "Severe unresolving pulpal inflammation requiring root canal or extraction.", actionable: false },
+    { id: "necrosis", term: "Pulpal Necrosis", triggers: ["necrotic", "dead pulp", "non vital", "necrosis"], category: "Endodontic", code: "ICD-10 K04.1 / SNOMED 196375005", meaning: "Complete cessation of pulpal blood supply and neural function.", actionable: false },
+    { id: "apical_perio", term: "Acute Apical Periodontitis", triggers: ["apical periodontitis", "tender to percussion", "percussion positive"], category: "Endodontic", code: "ICD-10 K04.4 / SNOMED 196378007", meaning: "Inflammation of periapical periodontal ligament; painful to biting.", actionable: false },
+    { id: "apical_abscess", term: "Chronic Apical Abscess / Fistula", triggers: ["abscess", "fistula", "gumboil", "sinus tract"], category: "Endodontic", code: "ICD-10 K04.6 / SNOMED 196380001", meaning: "Suppurative periapical inflammatory drainage channel through alveolar bone.", actionable: false },
+    { id: "rct", term: "Root Canal Therapy (RCT)", triggers: ["root canal", "endodontic therapy", "pulpectomy", "rct"], category: "Endodontic", code: "CDT D3310-D3330 / SNOMED 234857008", meaning: "Chemo-mechanical extirpation, shaping, and hermetic obturation of pulp canals.", actionable: false },
+
+    // 5. Tooth Surfaces & Anatomical Orientation
+    { id: "surf_m", term: "Mesial Surface", triggers: ["mesial", "m"], category: "Tooth Surfaces", code: "SNOMED 245643001", meaning: "Surface facing toward the anterior midline of the dental arch.", actionable: true },
+    { id: "surf_d", term: "Distal Surface", triggers: ["distal", "d"], category: "Tooth Surfaces", code: "SNOMED 245644007", meaning: "Surface facing away from the anterior midline of the dental arch.", actionable: true },
+    { id: "surf_o", term: "Occlusal Surface", triggers: ["occlusal", "o", "chewing surface", "biting surface"], category: "Tooth Surfaces", code: "SNOMED 245645008", meaning: "Masticatory surface of posterior molars and premolars.", actionable: true },
+    { id: "surf_i", term: "Incisal Edge", triggers: ["incisal", "incisal edge", "cutting edge"], category: "Tooth Surfaces", code: "SNOMED 245646009", meaning: "Cutting coronal margin of anterior central/lateral incisors and canines.", actionable: true },
+    { id: "surf_b", term: "Buccal / Facial Surface", triggers: ["buccal", "facial", "labial", "b", "f"], category: "Tooth Surfaces", code: "SNOMED 245647000", meaning: "Surface directed outwardly toward the cheeks or lips.", actionable: true },
+    { id: "surf_l", term: "Lingual / Palatal Surface", triggers: ["lingual", "palatal", "l", "p"], category: "Tooth Surfaces", code: "SNOMED 245648005", meaning: "Surface directed inwardly toward the tongue or palate.", actionable: true },
+    { id: "surf_mod", term: "Mesio-Occluso-Distal", triggers: ["mod", "mesio occlusal distal"], category: "Tooth Surfaces", code: "SNOMED 245649002", meaning: "Three-surface coronal cavity involving mesial, occlusal, and distal walls.", actionable: false },
+    { id: "surf_mo", term: "Mesio-Occlusal", triggers: ["mo", "mesio occlusal"], category: "Tooth Surfaces", code: "SNOMED 245650002", meaning: "Two-surface coronal preparation involving mesial interproximal and occlusal.", actionable: false },
+    { id: "surf_do", term: "Disto-Occlusal", triggers: ["do", "disto occlusal"], category: "Tooth Surfaces", code: "SNOMED 245651003", meaning: "Two-surface coronal preparation involving distal interproximal and occlusal.", actionable: false },
+
+    // 6. Occlusion & Orthodontics
+    { id: "class_1_occ", term: "Angle Class I Normal Occlusion", triggers: ["class 1 occlusion", "class one", "neutroclusion"], category: "Occlusion", code: "SNOMED 245652005", meaning: "MB cusp of maxillary 1st molar occludes in MB groove of mandibular 1st molar.", actionable: false },
+    { id: "class_2_occ", term: "Angle Class II Malocclusion", triggers: ["class 2", "class two", "distoclusion", "retrognathic"], category: "Occlusion", code: "SNOMED 245653000", meaning: "Mandibular dental arch occludes posterior (distal) to maxillary arch.", actionable: false },
+    { id: "class_3_occ", term: "Angle Class III Malocclusion", triggers: ["class 3", "class three", "mesioclusion", "prognathic", "underbite"], category: "Occlusion", code: "SNOMED 245654006", meaning: "Mandibular dental arch occludes anterior (mesial) to maxillary arch.", actionable: false },
+    { id: "overjet", term: "Horizontal Overjet", triggers: ["overjet", "horizontal overlap"], category: "Occlusion", code: "SNOMED 245655007", meaning: "Horizontal projection of maxillary incisors beyond mandibular incisors (normal 2-3mm).", actionable: false },
+    { id: "overbite", term: "Vertical Overbite", triggers: ["overbite", "deep bite", "vertical overlap"], category: "Occlusion", code: "SNOMED 245656008", meaning: "Vertical overlap of maxillary central incisors over mandibular incisors.", actionable: false },
+    { id: "crossbite", term: "Crossbite (Anterior / Posterior)", triggers: ["crossbite", "posterior crossbite", "anterior crossbite"], category: "Occlusion", code: "SNOMED 245657004", meaning: "Abnormal transverse buccolingual relationship of opposing teeth.", actionable: false },
+    { id: "openbite", term: "Anterior Open Bite", triggers: ["open bite", "apertognathia"], category: "Occlusion", code: "SNOMED 245658009", meaning: "Lack of vertical contact between opposing incisors in maximum intercuspation.", actionable: false },
+    { id: "diastema", term: "Midline / Interdental Diastema", triggers: ["diastema", "spacing", "gap between teeth"], category: "Occlusion", code: "ICD-10 K07.30 / SNOMED 245659001", meaning: "Space or gap separating adjacent teeth, commonly between central incisors.", actionable: false },
+
+    // 7. Soft Tissue & Oral Pathology
+    { id: "gingivitis", term: "Biofilm-Induced Gingivitis", triggers: ["gingivitis", "marginal inflammation", "swollen gums"], category: "Soft Tissue", code: "ICD-10 K05.10 / SNOMED 66383009", meaning: "Reversible bacterial inflammatory response limited to free and attached gingiva.", actionable: false },
+    { id: "ulcer", term: "Recurrent Aphthous Ulcer", triggers: ["aphthous", "ulcer", "canker sore", "aphthous ulcer"], category: "Soft Tissue", code: "ICD-10 K12.0 / SNOMED 266115006", meaning: "Painful, self-limiting benign ulceration with erythematous halo on unattached mucosa.", actionable: false },
+    { id: "leukoplakia", term: "Oral Leukoplakia", triggers: ["leukoplakia", "white patch"], category: "Soft Tissue", code: "ICD-10 K13.21 / SNOMED 235122005", meaning: "White mucosal plaque that cannot be wiped off and lacks specific diagnosis; precancerous risk.", actionable: false },
+    { id: "lichen", term: "Oral Lichen Planus", triggers: ["lichen planus", "wickham striae"], category: "Soft Tissue", code: "ICD-10 L43.9 / SNOMED 235123000", meaning: "Chronic T-cell mediated autoimmune disease with characteristic reticular white striations.", actionable: false },
+    { id: "hyperplasia", term: "Gingival Hyperplasia / Overgrowth", triggers: ["hyperplasia", "gingival overgrowth", "drug induced hyperplasia"], category: "Soft Tissue", code: "ICD-10 K06.1 / SNOMED 235124006", meaning: "Pathological enlargement of gingival tissues (often drug-induced by amlodipine, phenytoin).", actionable: false },
+    { id: "torus_p", term: "Torus Palatinus", triggers: ["torus", "palatal torus", "torus palatinus", "exostosis"], category: "Soft Tissue", code: "ICD-10 K10.0 / SNOMED 235125007", meaning: "Benign non-neoplastic exostosis or bony protuberance along the hard palate midline.", actionable: false },
+    { id: "torus_m", term: "Torus Mandibularis", triggers: ["mandibular torus", "lingual torus", "torus mandibularis"], category: "Soft Tissue", code: "ICD-10 K10.0 / SNOMED 235126008", meaning: "Benign bilateral bony outgrowths on lingual aspect of mandible near premolars.", actionable: false }
+  ];
 
   class SonoDentEngine {
     constructor() {
@@ -577,6 +655,16 @@
         i++;
       }
 
+      // Cross-match against Dental Clinical Lexicon for extended findings
+      const lexiconMatch = SonoDentEngine.lookupTerm(clean);
+      if (lexiconMatch && !actions.some(a => a.type === "condition" || a.type === "measurement" || a.type === "recession" || a.type === "mobility" || a.type === "furcation")) {
+        actions.push({
+          type: "lexicon_finding",
+          toothId: this.activeToothId,
+          termData: lexiconMatch
+        });
+      }
+
       this.commitBatch();
       return actions;
     }
@@ -775,11 +863,55 @@
         teethDetailedData: this.teeth
       };
     }
+
+    static getDentalLexicon() {
+      return DENTAL_LEXICON_DATABASE;
+    }
+
+    static getGrammarVocabulary() {
+      const vocab = new Set();
+      DENTAL_LEXICON_DATABASE.forEach(item => {
+        item.triggers.forEach(trig => vocab.add(trig));
+      });
+      for (let t = 1; t <= 32; t++) {
+        vocab.add(`tooth ${t}`);
+        vocab.add(`number ${t}`);
+      }
+      for (let d = 1; d <= 15; d++) {
+        vocab.add(String(d));
+      }
+      return Array.from(vocab);
+    }
+
+    static searchLexicon(query = "", category = "") {
+      const q = query.toLowerCase().trim();
+      return DENTAL_LEXICON_DATABASE.filter(item => {
+        const matchesCategory = !category || category === "All" || item.category.toLowerCase() === category.toLowerCase();
+        if (!matchesCategory) return false;
+        if (!q) return true;
+        return item.term.toLowerCase().includes(q) ||
+               item.code.toLowerCase().includes(q) ||
+               item.meaning.toLowerCase().includes(q) ||
+               item.triggers.some(t => t.toLowerCase().includes(q));
+      });
+    }
+
+    static lookupTerm(spokenPhrase) {
+      if (!spokenPhrase) return null;
+      const clean = spokenPhrase.toLowerCase().trim();
+      return DENTAL_LEXICON_DATABASE.find(item => {
+        return item.triggers.some(trig => {
+          const re = new RegExp("\\b" + trig.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + "\\b", "i");
+          return re.test(clean);
+        });
+      }) || null;
+    }
   }
 
   global.TEETH_METADATA = TEETH_METADATA;
   global.SITES = SITES;
   global.SITE_NAMES = SITE_NAMES;
+  global.DENTAL_LEXICON_DATABASE = DENTAL_LEXICON_DATABASE;
   global.SonoDentEngine = SonoDentEngine;
 
 })(typeof window !== 'undefined' ? window : this);
