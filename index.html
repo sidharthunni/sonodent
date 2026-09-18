@@ -2603,6 +2603,24 @@
       let recognition = null;
       let isRecording = false;
 
+      function tryAutoStartVoice() {
+        if (isRecording) return;
+        try {
+          initVoiceRecognition();
+          if (recognition) {
+            isRecording = true;
+            engine.isStandby = true;
+            updateVoiceIndicatorState('standby');
+            recognition.start();
+            initRealMicAudio();
+            document.getElementById('transcription-tape').textContent = 'STANDBY: Hands-free listening active. Say "Hey SonoDent" or "Start Charting"...';
+            console.log("Zero-touch auto-start successfully engaged on page load.");
+          }
+        } catch (e) {
+          console.log("Browser policy awaiting user gesture for mic:", e);
+        }
+      }
+
       function initVoiceRecognition() {
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
         if (!SpeechRecognition) return;
@@ -3329,6 +3347,7 @@
         update3DVisuals();
         animate();
         console.log("SonoDent AI: 3D Patient Twin (32 Teeth) & Clinical Engine loaded successfully at 60 FPS.");
+        setTimeout(tryAutoStartVoice, 300);
       } catch (err) {
         console.error("SonoDent AI Startup Error:", err);
       }
