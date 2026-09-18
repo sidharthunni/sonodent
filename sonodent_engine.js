@@ -381,9 +381,9 @@
       if (!text || typeof text !== "string") return [];
       let clean = text.toLowerCase().trim();
 
-      // 0. Hands-Free Operatory Wake-Word & Standby Gating
-      const wakeRegex = /\b(hey\s+sonodent|hi\s+sonodent|hello\s+sonodent|sonodent\s+wake\s+up|wake\s+up\s+sonodent|wake\s+up|sonodent\s+start|start\s+charting|start\s+listening|sonodent\s+listen|sonodent\s+resume|resume\s+charting|resume\s+voice|sonodent\s+active)\b/i;
-      const sleepRegex = /\b(hey\s+sonodent\s+pause|sonodent\s+pause|pause\s+charting|pause\s+voice|pause\s+listening|sonodent\s+sleep|go\s+to\s+sleep\s+sonodent|sonodent\s+stop|stop\s+charting|stop\s+listening|sonodent\s+standby|standby\s+sonodent|sleep\s+sonodent|mute\s+sonodent)\b/i;
+      // 0. Hands-Free Operatory Wake-Word & Standby Gating (Phonetic Tolerant)
+      const wakeRegex = /\b((?:hey|hi|hello|ok|okay)?\s*(?:sono\s*dent|sonodent|sono\s*dont|sono\s*den|sono|assistant)\s*(?:wake\s*up|wake|start|listen|resume|active)?|wake\s*up|start\s+(?:charting|listening|voice|exam)|resume\s+(?:charting|voice)|begin\s+(?:charting|exam)|start)\b/i;
+      const sleepRegex = /\b((?:hey|hi|ok)?\s*(?:sono\s*dent|sonodent|sono)?\s*(?:pause|sleep|standby|mute)|(?:sono\s*dent|sonodent|sono)\s*stop|stop\s+(?:charting|listening|voice|recording)|pause\s+(?:charting|voice|listening)|stop)\b/i;
 
       // Handle Sleep / Standby commands
       if (sleepRegex.test(clean)) {
