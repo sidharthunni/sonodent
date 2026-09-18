@@ -1098,37 +1098,48 @@
       background: #475569;
     }
     .cell-normal {
-      background-color: rgba(16, 185, 129, 0.15);
-      border-color: rgba(16, 185, 129, 0.4);
-      color: #34d399;
+      background-color: rgba(15, 23, 42, 0.7);
+      color: #67e8f9;
+      border-color: rgba(30, 41, 59, 0.8);
+      font-weight: 700;
     }
     .cell-warning {
-      background-color: rgba(245, 158, 11, 0.2);
-      border-color: rgba(245, 158, 11, 0.5);
-      color: #fbbf24;
+      background-color: rgba(217, 119, 6, 0.55) !important;
+      color: #fef08a !important;
+      border-color: #f59e0b !important;
+      font-weight: 800;
+      box-shadow: inset 0 0 8px rgba(245, 158, 11, 0.4);
     }
     .cell-danger {
-      background-color: rgba(239, 68, 68, 0.25);
-      border-color: rgba(239, 68, 68, 0.6);
-      color: #f87171;
+      background-color: rgba(220, 38, 38, 0.75) !important;
+      color: #ffffff !important;
+      border-color: #ef4444 !important;
+      font-weight: 900;
+      box-shadow: 0 0 8px rgba(239, 68, 68, 0.6), inset 0 0 8px rgba(239, 68, 68, 0.4);
     }
     .cell-active {
-      box-shadow: 0 0 0 2px #38bdf8, 0 0 12px rgba(56, 189, 248, 0.7);
+      box-shadow: 0 0 0 2px #38bdf8, 0 0 16px rgba(56, 189, 248, 0.9) !important;
+      background-color: rgba(2, 132, 199, 0.35) !important;
+      border-color: #38bdf8 !important;
       z-index: 10;
     }
     .has-bleeding {
       position: relative;
+      border: 2px solid #ef4444 !important;
+      background-color: rgba(185, 28, 28, 0.80) !important;
+      color: #ffffff !important;
     }
     .has-bleeding::after {
       content: '';
       position: absolute;
-      top: 2px;
-      right: 2px;
-      width: 5px;
-      height: 5px;
+      top: 1px;
+      right: 1px;
+      width: 7px;
+      height: 7px;
       border-radius: 50%;
       background-color: #ef4444;
-      box-shadow: 0 0 4px #ef4444;
+      box-shadow: 0 0 6px #ef4444, 0 0 10px #ef4444;
+      animation: pulse-ring 1.2s infinite ease-in-out;
     }
     @keyframes pulse-ring {
       0% { transform: scale(0.95); opacity: 0.9; }
@@ -2222,7 +2233,7 @@
         group.add(ringMesh);
 
         // 4. Bleeding Particle Droplet (High Visibility Buccal Placement)
-        const bleedGeo = new THREE.SphereGeometry(0.52, 16, 16);
+        const bleedGeo = new THREE.SphereGeometry(0.72, 16, 16);
         const bleedMat = new THREE.MeshStandardMaterial({
           color: 0xdc2626,
           emissive: 0xef4444,
@@ -2487,12 +2498,27 @@
           }
         }
 
-        // Pulsing Bleeding Droplets
+        // Dynamic 3D Pathological Physical Animations (Wobble for Mobile Teeth & Throbbing Bleeding/Pus)
         for (let id = 1; id <= 32; id++) {
           const m = toothMeshes[id];
-          if (m && m.userData.bleed && m.userData.bleed.visible) {
-            const scale = 1.0 + 0.3 * Math.sin(time * 0.009 + id);
-            m.userData.bleed.scale.set(scale, scale, scale);
+          const tData = engine.teeth[id];
+          if (m && tData) {
+            // Physical Tooth Looseness Wobble Animation for Pathological Mobility
+            if (tData.mobility > 0 && !tData.missing) {
+              const wobbleZ = Math.sin(time * 0.014 + id) * (tData.mobility * 0.065);
+              const wobbleX = Math.cos(time * 0.011 + id) * (tData.mobility * 0.045);
+              m.rotation.z = wobbleZ;
+              m.rotation.x = wobbleX;
+            } else {
+              m.rotation.z = 0;
+              m.rotation.x = 0;
+            }
+
+            // Throbbing Arterial Blood / Exudate Droplet
+            if (m.userData.bleed && m.userData.bleed.visible) {
+              const scale = 1.1 + 0.45 * Math.sin(time * 0.010 + id);
+              m.userData.bleed.scale.set(scale, scale, scale);
+            }
           }
         }
 
@@ -2605,9 +2631,9 @@
           }
           mesh.userData.ring.material.color.setHex(ringColor);
 
-          // Dynamic Gingival Recession & Pocket Displacement
+          // Dynamic Gingival Recession & Pocket Displacement (Dramatic High-Visibility Shift)
           const isMaxilla = mesh.userData.isMaxilla;
-          const recessionShift = Math.max(0, (maxD - 3) * 0.28) + (maxRec * 0.30);
+          const recessionShift = Math.max(0, (maxD - 3) * 0.45) + (maxRec * 0.85);
           mesh.userData.ring.position.y = isMaxilla ? recessionShift : -recessionShift;
 
           // Enamel Color Highlight & Pathological Disease State
@@ -2802,6 +2828,19 @@
         tbodyMaxilla.innerHTML = '';
         tbodyMandible.innerHTML = '';
 
+        // Upper Arch: Status Summary Badge Row (COND)
+        const trStatusMax = document.createElement('tr');
+        trStatusMax.className = "border-b-2 border-slate-700 bg-slate-950 text-[9px] font-bold";
+        trStatusMax.innerHTML = `<td class="p-1 text-left text-cyan-400 font-bold bg-slate-900/80">COND</td>`;
+        for (let id = 1; id <= 16; id++) {
+          const td = document.createElement('td');
+          td.id = `status-tooth-${id}`;
+          td.className = "p-0.5 border border-slate-800 font-mono text-[8px]";
+          td.textContent = "-";
+          trStatusMax.appendChild(td);
+        }
+        tbodyMaxilla.appendChild(trStatusMax);
+
         window.SITES.forEach(site => {
           const tr = document.createElement('tr');
           tr.className = "border-b border-slate-800/60";
@@ -2810,7 +2849,7 @@
           for (let id = 1; id <= 16; id++) {
             const td = document.createElement('td');
             td.id = `cell-${id}-${site}`;
-            td.className = "p-1 cursor-pointer transition border border-slate-800/40 font-bold hover:brightness-125";
+            td.className = "p-1 cursor-pointer transition border border-slate-800/40 font-bold hover:brightness-125 text-xs font-mono";
             td.textContent = '2';
             td.addEventListener('click', () => {
               engine.selectTooth(id);
@@ -2818,11 +2857,25 @@
               updateActiveToothHUD();
               update2DChart();
               update3DVisuals();
+              focusCameraOnTooth(id);
             });
             tr.appendChild(td);
           }
           tbodyMaxilla.appendChild(tr);
         });
+
+        // Lower Arch: Status Summary Badge Row (COND)
+        const trStatusMand = document.createElement('tr');
+        trStatusMand.className = "border-b-2 border-slate-700 bg-slate-950 text-[9px] font-bold";
+        trStatusMand.innerHTML = `<td class="p-1 text-left text-cyan-400 font-bold bg-slate-900/80">COND</td>`;
+        for (let id = 17; id <= 32; id++) {
+          const td = document.createElement('td');
+          td.id = `status-tooth-${id}`;
+          td.className = "p-0.5 border border-slate-800 font-mono text-[8px]";
+          td.textContent = "-";
+          trStatusMand.appendChild(td);
+        }
+        tbodyMandible.appendChild(trStatusMand);
 
         window.SITES.forEach(site => {
           const tr = document.createElement('tr');
@@ -2832,7 +2885,7 @@
           for (let id = 17; id <= 32; id++) {
             const td = document.createElement('td');
             td.id = `cell-${id}-${site}`;
-            td.className = "p-1 cursor-pointer transition border border-slate-800/40 font-bold hover:brightness-125";
+            td.className = "p-1 cursor-pointer transition border border-slate-800/40 font-bold hover:brightness-125 text-xs font-mono";
             td.textContent = '2';
             td.addEventListener('click', () => {
               engine.selectTooth(id);
@@ -2840,6 +2893,7 @@
               updateActiveToothHUD();
               update2DChart();
               update3DVisuals();
+              focusCameraOnTooth(id);
             });
             tr.appendChild(td);
           }
@@ -2852,13 +2906,36 @@
           const tooth = engine.teeth[id];
           if (!tooth) continue;
 
+          // Update Status Summary Badge Cell for this tooth
+          const statusCell = document.getElementById(`status-tooth-${id}`);
+          if (statusCell) {
+            let badges = [];
+            const hasAnyBleed = Object.values(tooth.bleeding).some(b => b);
+            const hasAnyPus = tooth.suppuration && Object.values(tooth.suppuration).some(p => p);
+            const maxRecession = tooth.recession ? Math.max(...Object.values(tooth.recession)) : 0;
+
+            if (tooth.missing) {
+              statusCell.innerHTML = '<span class="px-1 py-0.5 rounded bg-red-950 text-red-400 border border-red-800 font-extrabold text-[8px]">MIS</span>';
+            } else if (tooth.implant) {
+              statusCell.innerHTML = '<span class="px-1 py-0.5 rounded bg-cyan-950 text-cyan-300 border border-cyan-700 font-extrabold text-[8px]">IMP</span>';
+            } else {
+              if (hasAnyBleed) badges.push('<span class="px-1 py-0.5 rounded bg-red-600 text-white font-extrabold text-[8px] shadow-sm shadow-red-500 animate-pulse">BOP</span>');
+              if (hasAnyPus) badges.push('<span class="px-1 py-0.5 rounded bg-yellow-400 text-black font-extrabold text-[8px]">PUS</span>');
+              if (maxRecession > 0) badges.push(`<span class="px-0.5 py-0.5 rounded bg-orange-950 text-orange-300 border border-orange-700 font-bold text-[8px]">R${maxRecession}</span>`);
+              if (tooth.mobility > 0) badges.push(`<span class="px-0.5 py-0.5 rounded bg-amber-950 text-amber-300 border border-amber-700 font-bold text-[8px]">M${tooth.mobility}</span>`);
+              if (tooth.furcation > 0) badges.push(`<span class="px-0.5 py-0.5 rounded bg-purple-950 text-purple-300 border border-purple-700 font-bold text-[8px]">F${tooth.furcation}</span>`);
+
+              statusCell.innerHTML = badges.length > 0 ? badges.join(' ') : '<span class="text-slate-600 font-mono">-</span>';
+            }
+          }
+
           window.SITES.forEach((site, sIdx) => {
             const cell = document.getElementById(`cell-${id}-${site}`);
             if (!cell) return;
 
             if (tooth.missing) {
-              cell.textContent = "-";
-              cell.className = "p-1 cursor-pointer transition border border-slate-900 bg-red-950/20 text-red-400/60 font-mono text-[10px]";
+              cell.innerHTML = '<span class="text-red-500 font-extrabold text-sm">&times;</span>';
+              cell.className = "p-1 cursor-pointer transition border border-red-900/40 bg-red-950/40 text-red-500 font-mono text-xs font-bold";
               return;
             }
 
@@ -2867,10 +2944,18 @@
             const pus = tooth.suppuration ? tooth.suppuration[site] : false;
             const rec = tooth.recession ? tooth.recession[site] : 0;
 
-            cell.textContent = rec > 0 ? `${depth}|R${rec}` : depth;
-            let cls = "p-1 cursor-pointer transition border font-bold hover:brightness-125 ";
+            let cellHtml = `${depth}`;
+            if (rec > 0) {
+              cellHtml += `<span class="text-[8px] text-orange-300 block -mt-1 font-semibold">R${rec}</span>`;
+            }
+            if (pus) {
+              cellHtml += `<span class="text-[8px] text-yellow-300 block -mt-1 font-bold">P</span>`;
+            }
+            cell.innerHTML = cellHtml;
 
-            if (id === engine.activeToothId && sIdx === engine.activeSiteIndex) {
+            let cls = "p-1 cursor-pointer transition border font-mono font-bold hover:brightness-125 text-xs ";
+
+            if (id === engine.activeToothId) {
               cls += "cell-active ";
             }
 
