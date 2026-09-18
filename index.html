@@ -403,7 +403,8 @@
 
       // 0. Hands-Free Operatory Wake-Word & Standby Gating (Phonetic Tolerant)
       const wakeRegex = /\b((?:hey|hi|hello|ok|okay)?\s*(?:sono\s*dent|sonodent|sono\s*dont|sono\s*den|sono|assistant)\s*(?:wake\s*up|wake|start|listen|resume|active)?|wake\s*up|start\s+(?:charting|listening|voice|exam)|resume\s+(?:charting|voice)|begin\s+(?:charting|exam))\b/i;
-      const sleepRegex = /\b((?:hey|hi|ok)?\s*(?:sono\s*dent|sonodent|sono)?\s*(?:pause|sleep|standby|mute)|(?:sono\s*dent|sonodent|sono)\s*stop|stop\s+(?:charting|listening|voice|recording)|pause\s+(?:charting|voice|listening)|sonodent\s+pause|sonodent\s+sleep)\b/i;
+      // Strict sleep regex: only engage standby when explicitly addressed to SonoDent or 'stop charting'
+      const sleepRegex = /\b((?:hey|hi|ok)?\s*(?:sono\s*dent|sonodent|sono)\s+(?:pause|sleep|standby|mute)|(?:sono\s*dent|sonodent|sono)\s+stop|stop\s+(?:charting|listening|voice|recording)|pause\s+(?:charting|voice|listening))\b/i;
 
       // Handle Sleep / Standby commands
       if (sleepRegex.test(clean)) {
@@ -429,9 +430,17 @@
 
       this.beginBatch();
 
+      // Operatory Acoustic / Speech-to-Text Phonetic Aliases
+      clean = clean.replace(/\b(vacation|fraction|bifurcation|trifurcation|fork|bone\s+loss|bone\s+defect|defect)\b/g, "furcation");
+      clean = clean.replace(/(\d+)\s+(pass|plus|post|puss|infection|drainage|discharge|purulent)\b/g, "$1 pus");
+      clean = clean.replace(/\b(infection|drainage|discharge|purulent)\b/g, "pus");
+      clean = clean.replace(/\b(severe\s+pocket|severe|deep\s+pocket|deep)\b/g, "pocket 6");
+      clean = clean.replace(/\b(moderate\s+pocket|moderate|early\s+perio|early)\b/g, "pocket 4");
+      clean = clean.replace(/\b(healthy\s+sulcus|healthy|normal\s+pocket|normal)\b/g, "pocket 2");
+
       // 1. Phonetic replacement for tooth indicator before numbers or digits
-      // Handles "2 14", "to 14", "too 14", "two 14", "in two 3", "into 3", "and to 14", "to the 14", "teeth 14", "number 14", "tooth #14", "tooth14", "to 14546"
-      clean = clean.replace(/\b(in\s+two|into|in\s+to|and\s+two|and\s+to|to\s+the|tooth|teeth|number|to|too|two|2)\s*#?\s*([0-9]+)\b/g, (m, prefix, numStr) => {
+      // Notice: Do NOT include '2' or 'two' unconditionally, so '14 2 2 3' doesn't turn into 'tooth 2'!
+      clean = clean.replace(/\b(in\s+two|into|in\s+to|and\s+two|and\s+to|to\s+the|tooth|teeth|number|to|too)\s*#?\s*([0-9]+)\b/g, (m, prefix, numStr) => {
         if (numStr.length >= 2) {
           const firstTwo = parseInt(numStr.slice(0, 2), 10);
           if (firstTwo >= 1 && firstTwo <= 32) {
@@ -449,6 +458,8 @@
         }
         return m;
       });
+      // Allow '2 14' or 'two 14' only where second number is 10..32
+      clean = clean.replace(/\b(two|2)\s*#?\s*([123][0-9])\b/g, "tooth $2");
 
       // 2. Map word numbers to digits
       const wordMap = [
@@ -484,8 +495,9 @@
         clean = clean.replace(new RegExp("\\b" + w + "\\b", "g"), d);
       }
 
-      // Re-normalize if "to", "two", "into", "2" preceded a converted number
-      clean = clean.replace(/\b(in\s+two|into|in\s+to|and\s+two|and\s+to|to|too|two|2)\s+(\d{1,2})\b/g, "tooth $2");
+      // Re-normalize if "to", "into" preceded a converted number
+      clean = clean.replace(/\b(in\s+two|into|in\s+to|and\s+two|and\s+to|to|too)\s+(\d{1,2})\b/g, "tooth $2");
+      clean = clean.replace(/\b(two|2)\s+([123][0-9])\b/g, "tooth $2");
 
       // 3. Tokenize and expand numbers
       const rawTokens = clean.split(/[\s,]+/);
@@ -516,9 +528,16 @@
               continue;
             }
           }
-          // If > 15, split into individual depths (e.g. 546 -> 5, 4, 6)
-          if (val > 15) {
+          // 3 or more digits (e.g. 546, 444, 223) -> split into individual depths
+          if (t.length >= 3) {
             for (let c = 0; c < t.length; c++) tokens.push(t[c]);
+          } else if (t.length === 2) {
+            // Valid tooth number 1..32 (e.g. 19, 30) -> keep intact
+            if (val >= 1 && val <= 32) {
+              tokens.push(t);
+            } else {
+              for (let c = 0; c < t.length; c++) tokens.push(t[c]);
+            }
           } else {
             tokens.push(t);
           }
@@ -556,7 +575,7 @@
 
         // Implicit tooth selection WITHOUT requiring the word "tooth"
         // Handles "14 bleeding", "19 pus", "30 recession 3", "8 mobility 2", "15 furcation 2", "1 missing", "19 implant", "14 5 4 6"
-        const conditionKeywords = ["bleeding", "blood", "bleed", "bop", "positive", "pus", "suppuration", "suppurating", "exudate", "recession", "recess", "mobility", "mobile", "furcation", "furca", "missing", "extracted", "absent", "implant", "fixture", "pocket", "deep", "healthy"];
+        const conditionKeywords = ["bleeding", "blood", "bleed", "bop", "positive", "pus", "suppuration", "suppurating", "exudate", "recession", "recess", "mobility", "mobile", "furcation", "furca", "missing", "extracted", "absent", "implant", "fixture", "pocket", "deep", "healthy", "normal", "moderate", "severe"];
         const possibleTooth = parseInt(tok, 10);
         if (!isNaN(possibleTooth) && possibleTooth >= 1 && possibleTooth <= 32 && i + 1 < tokens.length) {
           const nextTok = tokens[i + 1];
@@ -703,6 +722,42 @@
           actions.push({ type: "implant", toothId: this.activeToothId });
           i++;
           continue;
+        }
+
+        // Direct Pocket Depth Command: e.g. "pocket 6", "pocket 4", "depth 2"
+        if (tok === "pocket" || tok === "depth") {
+          if (i + 1 < tokens.length) {
+            const dVal = this.parseSpokenNumber(tokens[i + 1]);
+            if (dVal !== null && dVal >= 1 && dVal <= 15) {
+              SITES.forEach(s => {
+                this.setMeasurement(this.activeToothId, s, dVal);
+              });
+              actions.push({ type: "measurement", toothId: this.activeToothId, site: "MB", depth: dVal });
+              actions.push({ type: "measurement", toothId: this.activeToothId, site: "B", depth: dVal });
+              actions.push({ type: "measurement", toothId: this.activeToothId, site: "DB", depth: dVal });
+              i += 2;
+              continue;
+            }
+          }
+          i++;
+          continue;
+        }
+
+        // Handle inverted syntax: "class 2 furcation", "grade 2 mobility"
+        if ((tok === "class" || tok === "grade") && i + 1 < tokens.length) {
+          const parsedVal = this.parseSpokenNumber(tokens[i + 1]);
+          if (parsedVal !== null && i + 2 < tokens.length && (tokens[i + 2] === "furcation" || tokens[i + 2] === "furca")) {
+            this.setFurcation(this.activeToothId, parsedVal);
+            actions.push({ type: "furcation", toothId: this.activeToothId, value: parsedVal });
+            i += 3;
+            continue;
+          }
+          if (parsedVal !== null && i + 2 < tokens.length && (tokens[i + 2] === "mobility" || tokens[i + 2] === "mobile")) {
+            this.setMobility(this.activeToothId, parsedVal);
+            actions.push({ type: "mobility", toothId: this.activeToothId, value: parsedVal });
+            i += 3;
+            continue;
+          }
         }
 
         const numVal = this.parseSpokenNumber(tok);
@@ -1419,10 +1474,12 @@
           <button class="btn-quick-voice px-2 py-1 rounded bg-slate-900 hover:bg-slate-800 border border-slate-800 hover:border-yellow-500/60 text-yellow-300 font-medium transition cursor-pointer" data-cmd="19 pus">"19 pus"</button>
           <button class="btn-quick-voice px-2 py-1 rounded bg-slate-900 hover:bg-slate-800 border border-slate-800 hover:border-orange-500/60 text-orange-300 font-medium transition cursor-pointer" data-cmd="30 recession 3">"30 recession 3"</button>
           <button class="btn-quick-voice px-2 py-1 rounded bg-slate-900 hover:bg-slate-800 border border-slate-800 hover:border-amber-500/60 text-amber-300 font-medium transition cursor-pointer" data-cmd="8 mobility 2">"8 mobility 2"</button>
-          <button class="btn-quick-voice px-2 py-1 rounded bg-slate-900 hover:bg-slate-800 border border-slate-800 hover:border-purple-500/60 text-purple-300 font-medium transition cursor-pointer" data-cmd="15 furcation 2">"15 furcation 2"</button>
+          <button class="btn-quick-voice px-2 py-1 rounded bg-slate-900 hover:bg-slate-800 border border-slate-800 hover:border-purple-500/60 text-purple-300 font-medium transition cursor-pointer" data-cmd="30 furcation 2">"30 furcation 2"</button>
           <button class="btn-quick-voice px-2 py-1 rounded bg-slate-900 hover:bg-slate-800 border border-slate-800 hover:border-red-700/60 text-slate-300 font-medium transition cursor-pointer" data-cmd="1 missing">"1 missing"</button>
           <button class="btn-quick-voice px-2 py-1 rounded bg-slate-900 hover:bg-slate-800 border border-slate-800 hover:border-cyan-500/60 text-cyan-300 font-medium transition cursor-pointer" data-cmd="19 implant">"19 implant"</button>
-          <button class="btn-quick-voice px-2 py-1 rounded bg-slate-900 hover:bg-slate-800 border border-slate-800 hover:border-emerald-500/60 text-emerald-300 font-medium transition cursor-pointer" data-cmd="3 2 2 2">"3 2 2 2"</button>
+          <button class="btn-quick-voice px-2 py-1 rounded bg-slate-900 hover:bg-slate-800 border border-slate-800 hover:border-red-500/60 text-red-400 font-medium transition cursor-pointer" data-cmd="14 pocket 6">"14 pocket 6" (Severe)</button>
+          <button class="btn-quick-voice px-2 py-1 rounded bg-slate-900 hover:bg-slate-800 border border-slate-800 hover:border-amber-500/60 text-amber-300 font-medium transition cursor-pointer" data-cmd="14 pocket 4">"14 pocket 4" (Early)</button>
+          <button class="btn-quick-voice px-2 py-1 rounded bg-slate-900 hover:bg-slate-800 border border-slate-800 hover:border-emerald-500/60 text-emerald-300 font-medium transition cursor-pointer" data-cmd="14 pocket 2">"14 pocket 2" (Healthy)</button>
           <button class="btn-quick-voice px-2 py-1 rounded bg-slate-900 hover:bg-slate-800 border border-slate-800 hover:border-amber-500/60 text-amber-400 font-medium transition cursor-pointer" data-cmd="undo">"undo"</button>
         </div>
 
@@ -2622,6 +2679,8 @@
           let ringColor = 0x10b981; // Healthy Green
           if (hasBleeding || maxD >= 5) {
             ringColor = 0xef4444; // Crimson Red for Active Bleeding or Deep Pocket >=5mm
+          } else if (hasSuppuration) {
+            ringColor = 0xfacc15; // Exudate Yellow for Suppuration / Pus
           } else if (toothData.furcation > 0) {
             ringColor = 0xa855f7; // Purple Warning for Furcation Defect
           } else if (toothData.implant) {
@@ -2641,25 +2700,33 @@
             if (hasBleeding) {
               // Active Bleeding on Probing: Vibrant Blood Crimson Warning
               mesh.userData.crown.material.emissive.setHex(0xdc2626);
-              mesh.userData.crown.material.emissiveIntensity = 0.65;
+              mesh.userData.crown.material.emissiveIntensity = 0.70;
+            } else if (hasSuppuration) {
+              // Active Purulent Suppuration / Pus: Glowing Exudate Yellow
+              mesh.userData.crown.material.emissive.setHex(0xca8a04);
+              mesh.userData.crown.material.emissiveIntensity = 0.70;
+            } else if (toothData.furcation > 0) {
+              // Furcation Defect: Vivid Violet Purple
+              mesh.userData.crown.material.emissive.setHex(0x9333ea);
+              mesh.userData.crown.material.emissiveIntensity = 0.70;
             } else if (toothData.implant) {
               // Titanium Dental Implant Fixture: Gleaming Metallic Silver Sheen
               mesh.userData.crown.material.emissive.setHex(0x64748b);
               mesh.userData.crown.material.emissiveIntensity = 0.40;
-              mesh.userData.crown.material.metalness = 0.85;
-              mesh.userData.crown.material.roughness = 0.25;
+              mesh.userData.crown.material.metalness = 0.95;
+              mesh.userData.crown.material.roughness = 0.15;
             } else if (maxD >= 5) {
               // Severe Periodontal Pocket (>=5mm): Deep Pathological Red
               mesh.userData.crown.material.emissive.setHex(0x991b1b);
-              mesh.userData.crown.material.emissiveIntensity = 0.45;
+              mesh.userData.crown.material.emissiveIntensity = 0.60;
             } else if (maxD === 4) {
               // Moderate Pocket (4mm): Amber Early Perio Warning
               mesh.userData.crown.material.emissive.setHex(0xd97706);
-              mesh.userData.crown.material.emissiveIntensity = 0.30;
+              mesh.userData.crown.material.emissiveIntensity = 0.45;
             } else if (toothData.mobility > 0) {
               // Loose Mobile Tooth: Orange Warning
               mesh.userData.crown.material.emissive.setHex(0xeab308);
-              mesh.userData.crown.material.emissiveIntensity = 0.35;
+              mesh.userData.crown.material.emissiveIntensity = 0.45;
             } else if (id === engine.activeToothId) {
               // Active Healthy Focused Tooth: Clear Cyan
               mesh.userData.crown.material.emissive.setHex(0x0284c7);
