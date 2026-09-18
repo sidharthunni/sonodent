@@ -410,8 +410,8 @@
       this.beginBatch();
 
       // 1. Phonetic replacement for tooth indicator before numbers or digits
-      // Handles "to 14", "too 14", "two 14", "in two 3", "into 3", "and to 14", "to the 14", "teeth 14", "number 14", "tooth #14", "tooth14", "to 14546"
-      clean = clean.replace(/\b(in\s+two|into|in\s+to|and\s+two|and\s+to|to\s+the|tooth|teeth|number|to|too|two)\s*#?\s*([0-9]+)\b/g, (m, prefix, numStr) => {
+      // Handles "2 14", "to 14", "too 14", "two 14", "in two 3", "into 3", "and to 14", "to the 14", "teeth 14", "number 14", "tooth #14", "tooth14", "to 14546"
+      clean = clean.replace(/\b(in\s+two|into|in\s+to|and\s+two|and\s+to|to\s+the|tooth|teeth|number|to|too|two|2)\s*#?\s*([0-9]+)\b/g, (m, prefix, numStr) => {
         if (numStr.length >= 2) {
           const firstTwo = parseInt(numStr.slice(0, 2), 10);
           if (firstTwo >= 1 && firstTwo <= 32) {
@@ -464,8 +464,8 @@
         clean = clean.replace(new RegExp("\\b" + w + "\\b", "g"), d);
       }
 
-      // Re-normalize if "to", "two", "into", etc. preceded a converted number
-      clean = clean.replace(/\b(in\s+two|into|in\s+to|and\s+two|and\s+to|to|too|two)\s+(\d{1,2})\b/g, "tooth $2");
+      // Re-normalize if "to", "two", "into", "2" preceded a converted number
+      clean = clean.replace(/\b(in\s+two|into|in\s+to|and\s+two|and\s+to|to|too|two|2)\s+(\d{1,2})\b/g, "tooth $2");
 
       // 3. Tokenize and expand numbers
       const rawTokens = clean.split(/[\s,]+/);

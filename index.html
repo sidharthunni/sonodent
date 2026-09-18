@@ -427,8 +427,8 @@
       this.beginBatch();
 
       // 1. Phonetic replacement for tooth indicator before numbers or digits
-      // Handles "to 14", "too 14", "two 14", "in two 3", "into 3", "and to 14", "to the 14", "teeth 14", "number 14", "tooth #14", "tooth14", "to 14546"
-      clean = clean.replace(/\b(in\s+two|into|in\s+to|and\s+two|and\s+to|to\s+the|tooth|teeth|number|to|too|two)\s*#?\s*([0-9]+)\b/g, (m, prefix, numStr) => {
+      // Handles "2 14", "to 14", "too 14", "two 14", "in two 3", "into 3", "and to 14", "to the 14", "teeth 14", "number 14", "tooth #14", "tooth14", "to 14546"
+      clean = clean.replace(/\b(in\s+two|into|in\s+to|and\s+two|and\s+to|to\s+the|tooth|teeth|number|to|too|two|2)\s*#?\s*([0-9]+)\b/g, (m, prefix, numStr) => {
         if (numStr.length >= 2) {
           const firstTwo = parseInt(numStr.slice(0, 2), 10);
           if (firstTwo >= 1 && firstTwo <= 32) {
@@ -481,8 +481,8 @@
         clean = clean.replace(new RegExp("\\b" + w + "\\b", "g"), d);
       }
 
-      // Re-normalize if "to", "two", "into", etc. preceded a converted number
-      clean = clean.replace(/\b(in\s+two|into|in\s+to|and\s+two|and\s+to|to|too|two)\s+(\d{1,2})\b/g, "tooth $2");
+      // Re-normalize if "to", "two", "into", "2" preceded a converted number
+      clean = clean.replace(/\b(in\s+two|into|in\s+to|and\s+two|and\s+to|to|too|two|2)\s+(\d{1,2})\b/g, "tooth $2");
 
       // 3. Tokenize and expand numbers
       const rawTokens = clean.split(/[\s,]+/);
@@ -2152,11 +2152,17 @@
         ringMesh.position.y = 0;
         group.add(ringMesh);
 
-        // 4. Bleeding Particle
-        const bleedGeo = new THREE.SphereGeometry(0.26, 8, 8);
-        const bleedMat = new THREE.MeshBasicMaterial({ color: 0xef4444 });
+        // 4. Bleeding Particle Droplet (High Visibility Buccal Placement)
+        const bleedGeo = new THREE.SphereGeometry(0.52, 16, 16);
+        const bleedMat = new THREE.MeshStandardMaterial({
+          color: 0xdc2626,
+          emissive: 0xef4444,
+          emissiveIntensity: 0.85,
+          roughness: 0.2,
+          metalness: 0.1
+        });
         const bleedMesh = new THREE.Mesh(bleedGeo, bleedMat);
-        bleedMesh.position.set(0, crownDir * 1.55, 0.75);
+        bleedMesh.position.set(0, crownDir * 1.35, 1.3);
         bleedMesh.visible = false;
         group.add(bleedMesh);
 
@@ -2348,7 +2354,7 @@
           lowerArchGroup.position.y = -breath;
         }
 
-        // Active Beacon Ring
+        // Active Beacon Ring (Changes to Crimson Red when Active Tooth has Bleeding or Deep Pocket)
         if (engine.activeToothId && toothMeshes[engine.activeToothId]) {
           const activeMesh = toothMeshes[engine.activeToothId];
           const worldPos = new THREE.Vector3();
@@ -2356,6 +2362,15 @@
           activeBeaconMesh.position.copy(worldPos);
           activeBeaconMesh.rotation.z += 0.04;
           activeBeaconMesh.visible = true;
+
+          const activeData = engine.teeth[engine.activeToothId];
+          const hasActiveBleed = activeData && Object.values(activeData.bleeding).some(b => b);
+          const hasActiveDeep = activeData && Object.values(activeData.probing).some(d => d >= 5);
+          if (hasActiveBleed || hasActiveDeep) {
+            activeBeaconMesh.material.color.setHex(0xef4444); // Crimson disease warning
+          } else {
+            activeBeaconMesh.material.color.setHex(0x38bdf8); // Standard cyan focus
+          }
 
           if (activeMesh.userData.ring) {
             activeMesh.userData.ring.rotation.z += 0.05;
@@ -2467,45 +2482,56 @@
             if (toothData.suppuration[s] && treatmentHealingFactor < 40) hasSuppuration = true;
           });
 
-          // Ring Color
-          let ringColor = 0x10b981; // Green
-          if (maxD >= 5) {
-            ringColor = 0xef4444; // Crimson Red
-          } else if (maxD === 4) {
-            ringColor = 0xf59e0b; // Amber
+          // Cervical Pocket Ring Color (Crimson for Disease/Bleeding, Amber for Early Perio, Green for Healthy)
+          let ringColor = 0x10b981; // Healthy Green
+          if (hasBleeding || maxD >= 5) {
+            ringColor = 0xef4444; // Crimson Red for Active Bleeding or Deep Pocket >=5mm
+          } else if (maxD === 4 || toothData.mobility > 0) {
+            ringColor = 0xf59e0b; // Amber Warning
           }
           mesh.userData.ring.material.color.setHex(ringColor);
 
           // Dynamic Gingival Recession & Pocket Displacement
           const isMaxilla = mesh.userData.isMaxilla;
-          const recessionShift = Math.max(0, (maxD - 3) * 0.22) + (maxRec * 0.25);
+          const recessionShift = Math.max(0, (maxD - 3) * 0.28) + (maxRec * 0.30);
           mesh.userData.ring.position.y = isMaxilla ? recessionShift : -recessionShift;
 
-          // Enamel Color Highlight
+          // Enamel Color Highlight & Pathological Disease State
           if (!isXRayMode) {
-            if (id === engine.activeToothId) {
-              mesh.userData.crown.material.emissive.setHex(0x0284c7);
-              mesh.userData.crown.material.emissiveIntensity = 0.45;
-            } else if (toothData.mobility > 0) {
-              mesh.userData.crown.material.emissive.setHex(0xd97706);
-              mesh.userData.crown.material.emissiveIntensity = 0.35;
+            if (hasBleeding) {
+              // Active Bleeding on Probing: Vibrant Blood Crimson Warning
+              mesh.userData.crown.material.emissive.setHex(0xdc2626);
+              mesh.userData.crown.material.emissiveIntensity = 0.65;
             } else if (maxD >= 5) {
+              // Severe Periodontal Pocket (>=5mm): Deep Pathological Red
               mesh.userData.crown.material.emissive.setHex(0x991b1b);
-              mesh.userData.crown.material.emissiveIntensity = 0.28;
+              mesh.userData.crown.material.emissiveIntensity = 0.45;
             } else if (maxD === 4) {
-              mesh.userData.crown.material.emissive.setHex(0x92400e);
-              mesh.userData.crown.material.emissiveIntensity = 0.16;
+              // Moderate Pocket (4mm): Amber Early Perio Warning
+              mesh.userData.crown.material.emissive.setHex(0xd97706);
+              mesh.userData.crown.material.emissiveIntensity = 0.30;
+            } else if (toothData.mobility > 0) {
+              // Loose Mobile Tooth: Orange Warning
+              mesh.userData.crown.material.emissive.setHex(0xeab308);
+              mesh.userData.crown.material.emissiveIntensity = 0.35;
+            } else if (id === engine.activeToothId) {
+              // Active Healthy Focused Tooth: Clear Cyan
+              mesh.userData.crown.material.emissive.setHex(0x0284c7);
+              mesh.userData.crown.material.emissiveIntensity = 0.40;
             } else {
+              // Healthy Intact Enamel: Subtle Pearlescent Tone
               mesh.userData.crown.material.emissive.setHex(0x080f1e);
               mesh.userData.crown.material.emissiveIntensity = 0.05;
             }
           }
 
-          mesh.userData.bleed.visible = hasBleeding;
+          mesh.userData.bleed.visible = hasBleeding || hasSuppuration;
           if (hasSuppuration) {
-            mesh.userData.bleed.material.color.setHex(0xfacc15);
+            mesh.userData.bleed.material.color.setHex(0xfacc15); // Suppuration pus yellow
+            mesh.userData.bleed.material.emissive.setHex(0xfacc15);
           } else {
-            mesh.userData.bleed.material.color.setHex(0xef4444);
+            mesh.userData.bleed.material.color.setHex(0xdc2626); // Arterial blood crimson
+            mesh.userData.bleed.material.emissive.setHex(0xef4444);
           }
         }
       }
